@@ -156,7 +156,7 @@ void screen_init() {
         tex->param = GPU_TEXTURE_MAG_FILTER(GPU_LINEAR) | GPU_TEXTURE_MIN_FILTER(GPU_LINEAR) | GPU_TEXTURE_WRAP_S(GPU_CLAMP_TO_EDGE) | GPU_TEXTURE_WRAP_T(GPU_CLAMP_TO_EDGE);
     }
 
-    font_scale = 30.0f / glyphInfo->cellHeight; // 30 is cellHeight in J machines
+    font_scale = 30.0f / glyphInfo->cellHeight;
 }
 
 void screen_exit() {
@@ -560,15 +560,16 @@ static void screen_wrap_string(u32* lines, float* lineWidths, float* lineHeights
 
         charWidth *= scaleX * fontGetCharWidthInfo(NULL, fontGlyphIndexFromCodePoint(NULL, code))->charWidth;
 
-        if(code == '\n' || (wordWrap && lw + charWidth >= maxWidth)) {
+        if(code == '\n' || (wordWrap && linePos > 0 && lw + charWidth > maxWidth)) {
             if(code == '\n') {
                 linePos++;
                 lh = scaleY * fontGetInfo(NULL)->lineFeed;
             }
 
             u32 oldLinePos = linePos;
+            bool moveWord = code != '\n' && code < 0x2E80 && wordPos > 0 && ww + charWidth <= maxWidth;
 
-            if(code != '\n' && wordPos != -1) {
+            if(moveWord) {
                 linePos = (u32) wordPos;
                 lw -= ww;
             }
@@ -577,7 +578,7 @@ static void screen_wrap_string(u32* lines, float* lineWidths, float* lineHeights
                                            lines, lineWidths, lineHeights,
                                            maxLines);
 
-            if(code != '\n' && wordPos != -1) {
+            if(moveWord) {
                 linePos = oldLinePos - wordPos;
                 lw = ww;
             }
@@ -586,7 +587,7 @@ static void screen_wrap_string(u32* lines, float* lineWidths, float* lineHeights
             ww = 0;
         }
 
-        if(code == ' ') {
+        if(code == ' ' || code == '\n' || code >= 0x2E80) {
             wordPos = -1;
             ww = 0;
         } else if(wordPos == -1) {

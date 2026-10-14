@@ -1,18 +1,18 @@
-/* quirc -- QR-code recognition library
- * Copyright (C) 2010-2012 Daniel Beer <dlbeer@gmail.com>
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "quirc_internal.h"
 
@@ -21,9 +21,9 @@
 
 #define MAX_POLY       64
 
-/************************************************************************
- * Galois fields
- */
+
+
+
 
 struct galois_field {
 	int p;
@@ -123,9 +123,9 @@ const static struct galois_field gf256 = {
 	.exp = gf256_exp
 };
 
-/************************************************************************
- * Polynomial operations
- */
+
+
+
 
 static void poly_add(uint8_t *dst, const uint8_t *src, uint8_t c,
 		     int shift, const struct galois_field *gf)
@@ -171,9 +171,9 @@ static uint8_t poly_eval(const uint8_t *s, uint8_t x,
 	return sum;
 }
 
-/************************************************************************
- * Berlekamp-Massey algorithm for finding error locator polynomials.
- */
+
+
+
 
 static void berlekamp_massey(const uint8_t *s, int N,
 			     const struct galois_field *gf,
@@ -227,11 +227,11 @@ static void berlekamp_massey(const uint8_t *s, int N,
 	memcpy(sigma, C, MAX_POLY);
 }
 
-/************************************************************************
- * Code stream error correction
- *
- * Generator polynomial for GF(2^8) is x^8 + x^4 + x^3 + x^2 + 1
- */
+
+
+
+
+
 
 static int block_syndromes(const uint8_t *data, int bs, int npar, uint8_t *s)
 {
@@ -301,21 +301,21 @@ static quirc_decode_error_t correct_block(uint8_t *data,
 	uint8_t omega[MAX_POLY];
 	int i;
 
-	/* Compute syndrome vector */
+
 	if (!block_syndromes(data, ecc->bs, npar, s))
 		return QUIRC_SUCCESS;
 
 	berlekamp_massey(s, npar, &gf256, sigma);
 
-	/* Compute derivative of sigma */
+
 	memset(sigma_deriv, 0, MAX_POLY);
 	for (i = 0; i + 1 < MAX_POLY; i += 2)
 		sigma_deriv[i] = sigma[i + 1];
 
-	/* Compute error evaluator polynomial */
+
 	eloc_poly(omega, s, sigma, npar - 1);
 
-	/* Find error locations and magnitudes */
+
 	for (i = 0; i < ecc->bs; i++) {
 		uint8_t xinv = gf256_exp[255 - i];
 
@@ -335,11 +335,11 @@ static quirc_decode_error_t correct_block(uint8_t *data,
 	return QUIRC_SUCCESS;
 }
 
-/************************************************************************
- * Format value error correction
- *
- * Generator polynomial for GF(2^4) is x^4 + x + 1
- */
+
+
+
+
+
 
 #define FORMAT_MAX_ERROR        3
 #define FORMAT_SYNDROMES        (FORMAT_MAX_ERROR * 2)
@@ -374,15 +374,15 @@ static quirc_decode_error_t correct_format(uint16_t *f_ret)
 	uint8_t s[MAX_POLY];
 	uint8_t sigma[MAX_POLY];
 
-	/* Evaluate U (received codeword) at each of alpha_1 .. alpha_6
-	 * to get S_1 .. S_6 (but we index them from 0).
-	 */
+
+
+
 	if (!format_syndromes(u, s))
 		return QUIRC_SUCCESS;
 
 	berlekamp_massey(s, FORMAT_SYNDROMES, &gf16, sigma);
 
-	/* Now, find the roots of the polynomial */
+
 	for (i = 0; i < 15; i++)
 		if (!poly_eval(sigma, gf16_exp[15 - i], &gf16))
 			u ^= (1 << i);
@@ -394,9 +394,9 @@ static quirc_decode_error_t correct_format(uint16_t *f_ret)
 	return QUIRC_SUCCESS;
 }
 
-/************************************************************************
- * Decoder algorithm
- */
+
+
+
 
 struct datastream {
 	uint8_t		raw[QUIRC_MAX_PAYLOAD];
@@ -475,26 +475,26 @@ static int reserved_cell(int version, int i, int j)
 	int size = version * 4 + 17;
 	int ai = -1, aj = -1, a;
 
-	/* Finder + format: top left */
+
 	if (i < 9 && j < 9)
 		return 1;
 
-	/* Finder + format: bottom left */
+
 	if (i + 8 >= size && j < 9)
 		return 1;
 
-	/* Finder + format: top right */
+
 	if (i < 9 && j + 8 >= size)
 		return 1;
 
-	/* Exclude timing patterns */
+
 	if (i == 6 || j == 6)
 		return 1;
 
-	/* Exclude version info, if it exists. Version info sits adjacent to
-	 * the top-right and bottom-left finders in three rows, bounded by
-	 * the timing pattern.
-	 */
+
+
+
+
 	if (version >= 7) {
 		if (i < 6 && j + 11 >= size)
 			return 1;
@@ -502,7 +502,7 @@ static int reserved_cell(int version, int i, int j)
 			return 1;
 	}
 
-	/* Exclude alignment patterns */
+
 	for (a = 0; a < QUIRC_MAX_ALIGNMENT && ver->apat[a]; a++) {
 		int p = ver->apat[a];
 
@@ -872,7 +872,7 @@ static quirc_decode_error_t decode_payload(struct quirc_data *data,
 	}
 done:
 
-	/* Add nul terminator to all payloads */
+
 	if (data->payload_len >= sizeof(data->payload))
 		data->payload_len--;
 	data->payload[data->payload_len] = 0;
@@ -898,7 +898,7 @@ quirc_decode_error_t quirc_decode(const struct quirc_code *code,
 	    data->version > QUIRC_MAX_VERSION)
 		return QUIRC_ERROR_INVALID_VERSION;
 
-	/* Read format information -- try both locations */
+
 	err = read_format(code, data, 0);
 	if (err)
 		err = read_format(code, data, 1);

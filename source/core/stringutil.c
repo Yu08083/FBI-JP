@@ -28,6 +28,20 @@ void string_copy(char* dst, const char* src, size_t size) {
     }
 }
 
+void string_copy_utf8(char* dst, const char* src, size_t size) {
+    if(size == 0) {
+        return;
+    }
+
+    size_t length = strnlen(src, size - 1);
+    while(length > 0 && ((u8) src[length] & 0xC0) == 0x80) {
+        length--;
+    }
+
+    memcpy(dst, src, length);
+    dst[length] = '\0';
+}
+
 void string_get_file_name(char* out, const char* file, u32 size) {
     const char* end = file + strlen(file);
     const char* curr = file - 1;

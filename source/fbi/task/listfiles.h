@@ -24,7 +24,7 @@ typedef struct file_info_s {
     char path[FILE_PATH_MAX];
     u32 attributes;
 
-    // Files only
+
     u64 size;
     bool isCia;
     cia_info ciaInfo;

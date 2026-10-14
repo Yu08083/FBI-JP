@@ -211,7 +211,7 @@ static Result action_paste_contents_restore(void* data, u32 index) {
 }
 
 static bool action_paste_contents_error(void* data, u32 index, Result res, ui_view** errorView) {
-    *errorView = error_display_res(data, action_paste_contents_draw_top, res, "Failed to paste content.");
+    *errorView = error_display_res(data, action_paste_contents_draw_top, res, "貼り付けに失敗しました。");
     return true;
 }
 
@@ -240,7 +240,7 @@ static void action_paste_contents_update(ui_view* view, void* data, float* progr
         info_destroy(view);
 
         if(R_SUCCEEDED(pasteData->pasteInfo.result)) {
-            prompt_display_notify("Success", "Contents pasted.", COLOR_TEXT, NULL, NULL, NULL);
+            prompt_display_notify("完了", "貼り付けました。", COLOR_TEXT, NULL, NULL, NULL);
         }
 
         action_paste_contents_free_data(pasteData);
@@ -253,7 +253,7 @@ static void action_paste_contents_update(ui_view* view, void* data, float* progr
     }
 
     *progress = pasteData->pasteInfo.currTotal != 0 ? (float) ((double) pasteData->pasteInfo.currProcessed / (double) pasteData->pasteInfo.currTotal) : 0;
-    snprintf(text, PROGRESS_TEXT_MAX, "%lu / %lu\n%.2f %s / %.2f %s\n%.2f %s/s, ETA %s", pasteData->pasteInfo.processed, pasteData->pasteInfo.total,
+    snprintf(text, PROGRESS_TEXT_MAX, "%lu / %lu\n%.2f %s / %.2f %s\n%.2f %s/s, 残り %s", pasteData->pasteInfo.processed, pasteData->pasteInfo.total,
              ui_get_display_size(pasteData->pasteInfo.currProcessed),
              ui_get_display_size_units(pasteData->pasteInfo.currProcessed),
              ui_get_display_size(pasteData->pasteInfo.currTotal),
@@ -268,9 +268,9 @@ static void action_paste_contents_onresponse(ui_view* view, void* data, u32 resp
     if(response == PROMPT_YES) {
         Result res = task_data_op(&pasteData->pasteInfo);
         if(R_SUCCEEDED(res)) {
-            info_display("Pasting Contents", "Press B to cancel.", true, data, action_paste_contents_update, action_paste_contents_draw_top);
+            info_display("貼り付け中", "B: 中止", true, data, action_paste_contents_update, action_paste_contents_draw_top);
         } else {
-            error_display_res(NULL, NULL, res, "Failed to initiate paste operation.");
+            error_display_res(NULL, NULL, res, "貼り付けを開始できません。");
 
             action_paste_contents_free_data(pasteData);
         }
@@ -300,9 +300,9 @@ static void action_paste_contents_loading_update(ui_view* view, void* data, floa
             loadingData->pasteData->pasteInfo.total = linked_list_size(&loadingData->pasteData->contents);
             loadingData->pasteData->pasteInfo.processed = loadingData->pasteData->pasteInfo.total;
 
-            prompt_display_yes_no("Confirmation", "Paste clipboard contents to the current directory?", COLOR_TEXT, loadingData->pasteData, action_paste_contents_draw_top, action_paste_contents_onresponse);
+            prompt_display_yes_no("確認", "クリップボードの内容を\n現在のフォルダーに貼り付けますか？", COLOR_TEXT, loadingData->pasteData, action_paste_contents_draw_top, action_paste_contents_onresponse);
         } else {
-            error_display_res(NULL, NULL, loadingData->popData.result, "Failed to populate clipboard content list.");
+            error_display_res(NULL, NULL, loadingData->popData.result, "クリップボードの内容の一覧取得に失敗しました。");
 
             action_paste_contents_free_data(loadingData->pasteData);
         }
@@ -315,18 +315,18 @@ static void action_paste_contents_loading_update(ui_view* view, void* data, floa
         svcSignalEvent(loadingData->popData.cancelEvent);
     }
 
-    snprintf(text, PROGRESS_TEXT_MAX, "Fetching clipboard content list...");
+    snprintf(text, PROGRESS_TEXT_MAX, "コピーした内容の一覧を取得中…");
 }
 
 void action_paste_contents(linked_list* items, list_item* selected) {
     if(!clipboard_has_contents()) {
-        prompt_display_notify("Failure", "Clipboard empty.", COLOR_TEXT, NULL, NULL, NULL);
+        prompt_display_notify("失敗", "クリップボードが空です。", COLOR_TEXT, NULL, NULL, NULL);
         return;
     }
 
     paste_contents_data* data = (paste_contents_data*) calloc(1, sizeof(paste_contents_data));
     if(data == NULL) {
-        error_display(NULL, NULL, "Failed to allocate paste contents data.");
+        error_display(NULL, NULL, "メモリーの確保に失敗しました。");
 
         return;
     }
@@ -336,7 +336,7 @@ void action_paste_contents(linked_list* items, list_item* selected) {
     file_info* targetInfo = (file_info*) selected->data;
     Result targetCreateRes = task_create_file_item(&data->targetItem, targetInfo->archive, targetInfo->path, targetInfo->attributes, false);
     if(R_FAILED(targetCreateRes)) {
-        error_display_res(NULL, NULL, targetCreateRes, "Failed to create target file item.");
+        error_display_res(NULL, NULL, targetCreateRes, "対象ファイルの準備に失敗しました。");
 
         action_paste_contents_free_data(data);
         return;
@@ -374,7 +374,7 @@ void action_paste_contents(linked_list* items, list_item* selected) {
 
     paste_contents_loading_data* loadingData = (paste_contents_loading_data*) calloc(1, sizeof(paste_contents_loading_data));
     if(loadingData == NULL) {
-        error_display(NULL, NULL, "Failed to allocate loading data.");
+        error_display(NULL, NULL, "メモリーの確保に失敗しました。");
 
         action_paste_contents_free_data(data);
         return;
@@ -393,12 +393,12 @@ void action_paste_contents(linked_list* items, list_item* selected) {
 
     Result listRes = task_populate_files(&loadingData->popData);
     if(R_FAILED(listRes)) {
-        error_display_res(NULL, NULL, listRes, "Failed to initiate clipboard content list population.");
+        error_display_res(NULL, NULL, listRes, "クリップボードの内容の一覧取得を開始できません。");
 
         free(loadingData);
         action_paste_contents_free_data(data);
         return;
     }
 
-    info_display("Loading", "Press B to cancel.", false, loadingData, action_paste_contents_loading_update, action_paste_contents_loading_draw_top);
+    info_display("読み込み中", "B: 中止", false, loadingData, action_paste_contents_loading_update, action_paste_contents_loading_draw_top);
 }

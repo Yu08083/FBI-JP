@@ -105,14 +105,14 @@ static Result action_install_tickets_read_src(void* data, u32 handle, u32* bytes
 
 static Result action_install_tickets_open_dst(void* data, u32 index, void* initialReadBlock, u64 size, u32* handle) {
     AM_DeleteTicket(((file_info*) ((list_item*) linked_list_get(&((install_tickets_data*) data)->contents, index))->data)->ticketInfo.titleId);
-    return AM_InstallTicketBegin(handle);
+    return AMNET_InstallTicketBegin(handle);
 }
 
 static Result action_install_tickets_close_dst(void* data, u32 index, bool succeeded, u32 handle) {
     if(succeeded) {
-        return AM_InstallTicketFinish(handle);
+        return AMNET_InstallTicketFinish(handle);
     } else {
-        return AM_InstallTicketAbort(handle);
+        return AMNET_InstallTicketAbort(handle);
     }
 }
 
@@ -129,7 +129,7 @@ static Result action_install_tickets_restore(void* data, u32 index) {
 }
 
 static bool action_install_tickets_error(void* data, u32 index, Result res, ui_view** errorView) {
-    *errorView = error_display_res(data, action_install_tickets_draw_top, res, "Failed to install ticket.");
+    *errorView = error_display_res(data, action_install_tickets_draw_top, res, "チケットのインストールに失敗しました。");
     return true;
 }
 
@@ -158,7 +158,7 @@ static void action_install_tickets_update(ui_view* view, void* data, float* prog
         info_destroy(view);
 
         if(R_SUCCEEDED(installData->installInfo.result)) {
-            prompt_display_notify("Success", "Install finished.", COLOR_TEXT, NULL, NULL, NULL);
+            prompt_display_notify("完了", "インストールが完了しました。", COLOR_TEXT, NULL, NULL, NULL);
         }
 
         action_install_tickets_free_data(installData);
@@ -171,7 +171,7 @@ static void action_install_tickets_update(ui_view* view, void* data, float* prog
     }
 
     *progress = installData->installInfo.currTotal != 0 ? (float) ((double) installData->installInfo.currProcessed / (double) installData->installInfo.currTotal) : 0;
-    snprintf(text, PROGRESS_TEXT_MAX, "%lu / %lu\n%.2f %s / %.2f %s\n%.2f %s/s, ETA %s", installData->installInfo.processed, installData->installInfo.total,
+    snprintf(text, PROGRESS_TEXT_MAX, "%lu / %lu\n%.2f %s / %.2f %s\n%.2f %s/s, 残り %s", installData->installInfo.processed, installData->installInfo.total,
              ui_get_display_size(installData->installInfo.currProcessed),
              ui_get_display_size_units(installData->installInfo.currProcessed),
              ui_get_display_size(installData->installInfo.currTotal),
@@ -187,9 +187,9 @@ static void action_install_tickets_onresponse(ui_view* view, void* data, u32 res
     if(response == PROMPT_YES) {
         Result res = task_data_op(&installData->installInfo);
         if(R_SUCCEEDED(res)) {
-            info_display("Installing ticket(s)", "Press B to cancel.", true, data, action_install_tickets_update, action_install_tickets_draw_top);
+            info_display("チケットをインストール中", "B: 中止", true, data, action_install_tickets_update, action_install_tickets_draw_top);
         } else {
-            error_display_res(NULL, NULL, res, "Failed to initiate ticket installation.");
+            error_display_res(NULL, NULL, res, "チケットのインストールを開始できません。");
 
             action_install_tickets_free_data(installData);
         }
@@ -222,9 +222,9 @@ static void action_install_tickets_loading_update(ui_view* view, void* data, flo
             loadingData->installData->installInfo.total = linked_list_size(&loadingData->installData->contents);
             loadingData->installData->installInfo.processed = loadingData->installData->installInfo.total;
 
-            prompt_display_yes_no("Confirmation", loadingData->message, COLOR_TEXT, loadingData->installData, action_install_tickets_draw_top, action_install_tickets_onresponse);
+            prompt_display_yes_no("確認", loadingData->message, COLOR_TEXT, loadingData->installData, action_install_tickets_draw_top, action_install_tickets_onresponse);
         } else {
-            error_display_res(NULL, NULL, loadingData->popData.result, "Failed to populate ticket list.");
+            error_display_res(NULL, NULL, loadingData->popData.result, "チケットの一覧取得に失敗しました。");
 
             action_install_tickets_free_data(loadingData->installData);
         }
@@ -237,13 +237,13 @@ static void action_install_tickets_loading_update(ui_view* view, void* data, flo
         svcSignalEvent(loadingData->popData.cancelEvent);
     }
 
-    snprintf(text, PROGRESS_TEXT_MAX, "Fetching ticket list...");
+    snprintf(text, PROGRESS_TEXT_MAX, "チケットの一覧を取得中…");
 }
 
 static void action_install_tickets_internal(linked_list* items, list_item* selected, bool (*filter)(void* data, const char* name, u32 attributes), void* filterData, const char* message, bool delete) {
     install_tickets_data* data = (install_tickets_data*) calloc(1, sizeof(install_tickets_data));
     if(data == NULL) {
-        error_display(NULL, NULL, "Failed to allocate install tickets data.");
+        error_display(NULL, NULL, "メモリーの確保に失敗しました。");
 
         return;
     }
@@ -253,7 +253,7 @@ static void action_install_tickets_internal(linked_list* items, list_item* selec
     file_info* targetInfo = (file_info*) selected->data;
     Result targetCreateRes = task_create_file_item(&data->targetItem, targetInfo->archive, targetInfo->path, targetInfo->attributes, true);
     if(R_FAILED(targetCreateRes)) {
-        error_display_res(NULL, NULL, targetCreateRes, "Failed to create target file item.");
+        error_display_res(NULL, NULL, targetCreateRes, "対象ファイルの準備に失敗しました。");
 
         action_install_tickets_free_data(data);
         return;
@@ -293,7 +293,7 @@ static void action_install_tickets_internal(linked_list* items, list_item* selec
 
     install_tickets_loading_data* loadingData = (install_tickets_loading_data*) calloc(1, sizeof(install_tickets_loading_data));
     if(loadingData == NULL) {
-        error_display(NULL, NULL, "Failed to allocate loading data.");
+        error_display(NULL, NULL, "メモリーの確保に失敗しました。");
 
         action_install_tickets_free_data(data);
         return;
@@ -316,28 +316,28 @@ static void action_install_tickets_internal(linked_list* items, list_item* selec
 
     Result listRes = task_populate_files(&loadingData->popData);
     if(R_FAILED(listRes)) {
-        error_display_res(NULL, NULL, listRes, "Failed to initiate ticket list population.");
+        error_display_res(NULL, NULL, listRes, "チケットの一覧取得を開始できません。");
 
         free(loadingData);
         action_install_tickets_free_data(data);
         return;
     }
 
-    info_display("Loading", "Press B to cancel.", false, loadingData, action_install_tickets_loading_update, action_install_tickets_loading_draw_top);
+    info_display("読み込み中", "B: 中止", false, loadingData, action_install_tickets_loading_update, action_install_tickets_loading_draw_top);
 }
 
 void action_install_ticket(linked_list* items, list_item* selected) {
-    action_install_tickets_internal(items, selected, NULL, NULL, "Install the selected ticket?", false);
+    action_install_tickets_internal(items, selected, NULL, NULL, "選択したチケットを\nインストールしますか？", false);
 }
 
 void action_install_ticket_delete(linked_list* items, list_item* selected) {
-    action_install_tickets_internal(items, selected, NULL, NULL, "Install and delete the selected ticket?", true);
+    action_install_tickets_internal(items, selected, NULL, NULL, "選択したチケットをインストールし、\n元のファイルを削除しますか？", true);
 }
 
 void action_install_tickets(linked_list* items, list_item* selected, bool (*filter)(void* data, const char* name, u32 attributes), void* filterData) {
-    action_install_tickets_internal(items, selected, filter, filterData, "Install all tickets in the current directory?", false);
+    action_install_tickets_internal(items, selected, filter, filterData, "現在のフォルダー内のチケットを\nすべてインストールしますか？", false);
 }
 
 void action_install_tickets_delete(linked_list* items, list_item* selected, bool (*filter)(void* data, const char* name, u32 attributes), void* filterData) {
-    action_install_tickets_internal(items, selected, filter, filterData, "Install and delete all tickets in the current directory?", true);
+    action_install_tickets_internal(items, selected, filter, filterData, "現在のフォルダー内のチケットを\nすべてインストールし、\n元のファイルを削除しますか？", true);
 }

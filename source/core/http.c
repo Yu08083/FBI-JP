@@ -36,7 +36,7 @@ static void httpc_resolve_redirect(char* oldUrl, const char* redirectTo, size_t 
         if(redirectTo[0] == '/') {
             char* baseEnd = oldUrl;
 
-            // Find the third slash to find the end of the URL's base; e.g. https://www.example.com/
+
             u32 slashCount = 0;
             while(*baseEnd != '\0' && (baseEnd = strchr(baseEnd + 1, '/')) != NULL) {
                 slashCount++;
@@ -45,7 +45,7 @@ static void httpc_resolve_redirect(char* oldUrl, const char* redirectTo, size_t 
                 }
             }
 
-            // If there are less than 3 slashes, assume the base URL ends at the end of the string; e.g. https://www.example.com
+
             if(slashCount != 3) {
                 baseEnd = oldUrl + strlen(oldUrl);
             }

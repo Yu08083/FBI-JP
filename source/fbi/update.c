@@ -18,16 +18,13 @@ static void update_check_update(ui_view* view, void* data, float* progress, char
     Result res = 0;
 
     json_t* json = NULL;
-    if(R_SUCCEEDED(res = http_download_json("https://api.github.com/repos/Steveice10/FBI/releases/latest", &json, 16 * 1024))) {
+    if(R_SUCCEEDED(res = http_download_json("https://api.github.com/repos/Yu08083/FBI-JP/releases/latest", &json, 16 * 1024))) {
         if(json_is_object(json)) {
-            json_t* name = json_object_get(json, "name");
+            json_t* name = json_object_get(json, "tag_name");
             json_t* assets = json_object_get(json, "assets");
 
             if(json_is_string(name) && json_is_array(assets)) {
-                char versionString[16];
-                snprintf(versionString, sizeof(versionString), "%d.%d.%d", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO);
-
-                if(strncmp(json_string_value(name), versionString, json_string_length(name)) != 0) {
+                if(strcmp(json_string_value(name), FBI_JA_VERSION) != 0) {
                     const char* url = NULL;
 
                     for(u32 i = 0; i < json_array_size(assets); i++) {
@@ -37,7 +34,7 @@ static void update_check_update(ui_view* view, void* data, float* progress, char
                             json_t* assetUrl = json_object_get(val, "browser_download_url");
 
                             if(json_is_string(assetName) && json_is_string(assetUrl)) {
-                                if(strncmp(json_string_value(assetName), fs_get_3dsx_path() != NULL ? "FBI.3dsx" : "FBI.cia", json_string_length(assetName)) == 0) {
+                                if(strcmp(json_string_value(assetName), fs_get_3dsx_path() != NULL ? "FBI-JP.3dsx" : "FBI-JP.cia") == 0) {
                                     url = json_string_value(assetUrl);
                                     break;
                                 }
@@ -66,16 +63,16 @@ static void update_check_update(ui_view* view, void* data, float* progress, char
     info_destroy(view);
 
     if(hasUpdate) {
-        action_install_url("Update FBI to the latest version?", updateURL, fs_get_3dsx_path(), NULL, NULL, NULL, NULL);
+        action_install_url("FBIを最新版に更新しますか？", updateURL, fs_get_3dsx_path(), NULL, NULL, NULL, NULL);
     } else {
         if(R_FAILED(res)) {
-            error_display_res(NULL, NULL, res, "Failed to check for update.");
+            error_display_res(NULL, NULL, res, "更新の確認に失敗しました。");
         } else {
-            prompt_display_notify("Success", "No updates available.", COLOR_TEXT, NULL, NULL, NULL);
+            prompt_display_notify("完了", "利用できる更新はありません。", COLOR_TEXT, NULL, NULL, NULL);
         }
     }
 }
 
 void update_open() {
-    info_display("Checking For Updates", "", false, NULL, update_check_update, NULL);
+    info_display("更新を確認中", "", false, NULL, update_check_update, NULL);
 }

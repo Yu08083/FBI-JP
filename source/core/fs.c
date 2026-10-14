@@ -192,7 +192,7 @@ FS_MediaType fs_get_title_destination(u64 titleId) {
     u16 category = (u16) ((titleId >> 32) & 0xFFFF);
     u8 variation = (u8) (titleId & 0xFF);
 
-    //     DSiWare                3DS                    DSiWare, System, DLP         Application           System Title
+
     return platform == 0x0003 || (platform == 0x0004 && ((category & 0x8011) != 0 || (category == 0x0000 && variation == 0x02))) ? MEDIATYPE_NAND : MEDIATYPE_SD;
 }
 

@@ -77,10 +77,10 @@ static const char* button_strings[32] = {
         "B",
         "Select",
         "Start",
-        "D-Pad Right",
-        "D-Pad Left",
-        "D-Pad Up",
-        "D-Pad Down",
+        "十字キー右",
+        "十字キー左",
+        "十字キー上",
+        "十字キー下",
         "R",
         "L",
         "X",
@@ -97,19 +97,19 @@ static const char* button_strings[32] = {
         "",
         "",
         "",
-        "C-Stick Right",
-        "C-Stick Left",
-        "C-Stick Up",
-        "C-Stick Down",
-        "Circle Pad Right",
-        "Circle Pad Left",
-        "Circle Pad Up",
-        "Circle Pad Down"
+        "Cスティック右",
+        "Cスティック左",
+        "Cスティック上",
+        "Cスティック下",
+        "スライドパッド右",
+        "スライドパッド左",
+        "スライドパッド上",
+        "スライドパッド下"
 };
 
 static void prompt_button_to_string(char* out, size_t size, u32 button) {
     if(button == PROMPT_BUTTON_ANY) {
-        snprintf(out, size, "Any Button");
+        snprintf(out, size, "いずれかのボタン");
         return;
     }
 
@@ -150,15 +150,24 @@ static void prompt_draw_bottom(ui_view* view, void* data, float x1, float y1, fl
 
     float textWidth;
     float textHeight;
-    screen_get_string_size(&textWidth, &textHeight, promptData->text, 0.5f, 0.5f);
-    screen_draw_string(promptData->text, x1 + (x2 - x1 - textWidth) / 2, y1 + (y2 - 5 - buttonHeight - y1 - textHeight) / 2, 0.5f, 0.5f, promptData->color, true);
+    float scale = 0.5f;
+    float wrapWidth = x2 - x1 - 16;
+    float availableHeight = y2 - 5 - buttonHeight - y1 - 8;
+    screen_get_string_size_wrap(&textWidth, &textHeight, promptData->text, scale, scale, wrapWidth);
+    while(textHeight > availableHeight && scale > 0.25f) {
+        scale -= 0.025f;
+        screen_get_string_size_wrap(&textWidth, &textHeight, promptData->text, scale, scale, wrapWidth);
+    }
+    float textX = x1 + (x2 - x1 - textWidth) / 2;
+    float textY = y1 + (y2 - 5 - buttonHeight - y1 - textHeight) / 2;
+    screen_draw_string_wrap(promptData->text, textX, textY, scale, scale, promptData->color, true, textX + wrapWidth);
 }
 
 ui_view* prompt_display_multi_choice(const char* name, const char* text, u32 color, const char** options, u32* optionButtons, u32 numOptions, void* data, void (*drawTop)(ui_view* view, void* data, float x1, float y1, float x2, float y2),
                                                                                                                                                           void (*onResponse)(ui_view* view, void* data, u32 response)) {
     prompt_data* promptData = (prompt_data*) calloc(1, sizeof(prompt_data));
     if(promptData == NULL) {
-        error_display(NULL, NULL, "Failed to allocate prompt data.");
+        error_display(NULL, NULL, "メモリーの確保に失敗しました。");
 
         return NULL;
     }
@@ -197,7 +206,7 @@ ui_view* prompt_display_notify(const char* name, const char* text, u32 color, vo
 
 ui_view* prompt_display_yes_no(const char* name, const char* text, u32 color, void* data, void (*drawTop)(ui_view* view, void* data, float x1, float y1, float x2, float y2),
                                                                                           void (*onResponse)(ui_view* view, void* data, u32 response)) {
-    static const char* options[2] = {"Yes", "No"};
+    static const char* options[2] = {"はい", "いいえ"};
     static u32 optionButtons[2] = {KEY_A, KEY_B};
     return prompt_display_multi_choice(name, text, color, options, optionButtons, 2, data, drawTop, onResponse);
 }

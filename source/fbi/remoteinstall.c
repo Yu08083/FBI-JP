@@ -144,7 +144,7 @@ static void remoteinstall_network_update(ui_view* view, void* data, float* progr
 
         u32 size = 0;
         if(remoteinstall_network_recvwait(networkData->clientSocket, &size, sizeof(size), 0) != sizeof(size)) {
-            error_display_errno(NULL, NULL, errno, "Failed to read payload length.");
+            error_display_errno(NULL, NULL, errno, "受信データの長さの取得に失敗しました。");
 
             remoteinstall_network_close_client(data);
             return;
@@ -152,7 +152,7 @@ static void remoteinstall_network_update(ui_view* view, void* data, float* progr
 
         size = ntohl(size);
         if(size >= DOWNLOAD_URL_MAX * INSTALL_URLS_MAX) {
-            error_display(NULL, NULL, "Payload too large.");
+            error_display(NULL, NULL, "受信データが大きすぎます。");
 
             remoteinstall_network_close_client(data);
             return;
@@ -160,14 +160,14 @@ static void remoteinstall_network_update(ui_view* view, void* data, float* progr
 
         char* urls = (char*) calloc(size + 1, sizeof(char));
         if(urls == NULL) {
-            error_display(NULL, NULL, "Failed to allocate URL buffer.");
+            error_display(NULL, NULL, "メモリーの確保に失敗しました。");
 
             remoteinstall_network_close_client(data);
             return;
         }
 
         if(remoteinstall_network_recvwait(networkData->clientSocket, urls, size, 0) != size) {
-            error_display_errno(NULL, NULL, errno, "Failed to read URL(s).");
+            error_display_errno(NULL, NULL, errno, "URLの読み込みに失敗しました。");
 
             free(urls);
             remoteinstall_network_close_client(data);
@@ -175,7 +175,7 @@ static void remoteinstall_network_update(ui_view* view, void* data, float* progr
         }
 
         remoteinstall_set_last_urls(urls);
-        action_install_url("Install from the received URL(s)?", urls, NULL, data, NULL, remoteinstall_network_close_client, NULL);
+        action_install_url("受信したURLから\nインストールしますか？", urls, NULL, data, NULL, remoteinstall_network_close_client, NULL);
 
         free(urls);
     } else if(errno != EAGAIN) {
@@ -184,7 +184,7 @@ static void remoteinstall_network_update(ui_view* view, void* data, float* progr
             info_destroy(view);
         }
 
-        error_display_errno(NULL, NULL, errno, "Failed to open socket.");
+        error_display_errno(NULL, NULL, errno, "ソケットを開く処理に失敗しました。");
 
         if(errno == 22 || errno == 115) {
             remoteinstall_network_free_data(networkData);
@@ -194,20 +194,20 @@ static void remoteinstall_network_update(ui_view* view, void* data, float* progr
     }
 
     struct in_addr addr = {(in_addr_t) gethostid()};
-    snprintf(text, PROGRESS_TEXT_MAX, "Waiting for connection...\nIP: %s\nPort: 5000", inet_ntoa(addr));
+    snprintf(text, PROGRESS_TEXT_MAX, "接続を待っています…\nIP: %s\nポート: 5000", inet_ntoa(addr));
 }
 
 static void remoteinstall_receive_urls_network() {
     remoteinstall_network_data* data = (remoteinstall_network_data*) calloc(1, sizeof(remoteinstall_network_data));
     if(data == NULL) {
-        error_display(NULL, NULL, "Failed to allocate network install data.");
+        error_display(NULL, NULL, "メモリーの確保に失敗しました。");
 
         return;
     }
 
     int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     if(sock < 0) {
-        error_display_errno(NULL, NULL, errno, "Failed to open server socket.");
+        error_display_errno(NULL, NULL, errno, "サーバーソケットを開く処理に失敗しました。");
 
         remoteinstall_network_free_data(data);
         return;
@@ -221,7 +221,7 @@ static void remoteinstall_receive_urls_network() {
     server.sin_addr.s_addr = (in_addr_t) gethostid();
 
     if(bind(data->serverSocket, (struct sockaddr*) &server, sizeof(server)) < 0) {
-        error_display_errno(NULL, NULL, errno, "Failed to bind server socket.");
+        error_display_errno(NULL, NULL, errno, "サーバーソケットの割り当てに失敗しました。");
 
         remoteinstall_network_free_data(data);
         return;
@@ -230,13 +230,13 @@ static void remoteinstall_receive_urls_network() {
     fcntl(data->serverSocket, F_SETFL, fcntl(data->serverSocket, F_GETFL, 0) | O_NONBLOCK);
 
     if(listen(data->serverSocket, 5) < 0) {
-        error_display_errno(NULL, NULL, errno, "Failed to listen on server socket.");
+        error_display_errno(NULL, NULL, errno, "サーバーの受信待ちに失敗しました。");
 
         remoteinstall_network_free_data(data);
         return;
     }
 
-    info_display("Receive URL(s)", "B: Return", false, data, remoteinstall_network_update, NULL);
+    info_display("URLの受信", "B: 戻る", false, data, remoteinstall_network_update, NULL);
 }
 
 #define QR_IMAGE_WIDTH 400
@@ -324,7 +324,7 @@ static void remoteinstall_qr_update(ui_view* view, void* data, float* progress, 
             ui_pop();
             info_destroy(view);
 
-            error_display_res(NULL, NULL, capRes, "Failed to start camera capture.");
+            error_display_res(NULL, NULL, capRes, "カメラの起動に失敗しました。");
 
             remoteinstall_qr_free_data(installData);
             return;
@@ -338,7 +338,7 @@ static void remoteinstall_qr_update(ui_view* view, void* data, float* progress, 
         info_destroy(view);
 
         if(R_FAILED(installData->captureInfo.result)) {
-            error_display_res(NULL, NULL, installData->captureInfo.result, "Error while capturing camera frames.");
+            error_display_res(NULL, NULL, installData->captureInfo.result, "カメラの画像取得中にエラー。");
         }
 
         remoteinstall_qr_free_data(installData);
@@ -376,18 +376,18 @@ static void remoteinstall_qr_update(ui_view* view, void* data, float* progress, 
 
             remoteinstall_set_last_urls((const char*) qrData.payload);
 
-            action_install_url("Install from the scanned QR code?", (const char*) qrData.payload, NULL, NULL, NULL, NULL, NULL);
+            action_install_url("読み取ったQRコードから\nインストールしますか？", (const char*) qrData.payload, NULL, NULL, NULL, NULL, NULL);
             return;
         }
     }
 
-    snprintf(text, PROGRESS_TEXT_MAX, "Waiting for QR code...");
+    snprintf(text, PROGRESS_TEXT_MAX, "QRコードを読み取ってください…");
 }
 
 static void remoteinstall_scan_qr_code() {
     remoteinstall_qr_data* data = (remoteinstall_qr_data*) calloc(1, sizeof(remoteinstall_qr_data));
     if(data == NULL) {
-        error_display(NULL, NULL, "Failed to allocate QR install data.");
+        error_display(NULL, NULL, "メモリーの確保に失敗しました。");
 
         return;
     }
@@ -405,14 +405,14 @@ static void remoteinstall_scan_qr_code() {
 
     data->qrContext = quirc_new();
     if(data->qrContext == NULL) {
-        error_display(NULL, NULL, "Failed to create QR context.");
+        error_display(NULL, NULL, "QRコード解析の準備に失敗しました。");
 
         remoteinstall_qr_free_data(data);
         return;
     }
 
     if(quirc_resize(data->qrContext, QR_IMAGE_WIDTH, QR_IMAGE_HEIGHT) != 0) {
-        error_display(NULL, NULL, "Failed to resize QR context.");
+        error_display(NULL, NULL, "QRコード解析領域の変更に失敗しました。");
 
         remoteinstall_qr_free_data(data);
         return;
@@ -420,7 +420,7 @@ static void remoteinstall_scan_qr_code() {
 
     data->captureInfo.buffer = (u16*) calloc(1, QR_IMAGE_WIDTH * QR_IMAGE_HEIGHT * sizeof(u16));
     if(data->captureInfo.buffer == NULL) {
-        error_display(NULL, NULL, "Failed to create image buffer.");
+        error_display(NULL, NULL, "画像バッファーの作成に失敗しました。");
 
         remoteinstall_qr_free_data(data);
         return;
@@ -428,50 +428,50 @@ static void remoteinstall_scan_qr_code() {
 
     data->tex = screen_allocate_free_texture();
 
-    info_display("QR Code Install", "B: Return, X: Switch Camera", false, data, remoteinstall_qr_update, remoteinstall_qr_draw_top);
+    info_display("QRコードからインストール", "B: 戻る  X: カメラ切替", false, data, remoteinstall_qr_update, remoteinstall_qr_draw_top);
 }
 
 static void remoteinstall_manually_enter_urls_onresponse(ui_view* view, void* data, SwkbdButton button, const char* response) {
     if(button == SWKBD_BUTTON_CONFIRM) {
         remoteinstall_set_last_urls(response);
 
-        action_install_url("Install from the entered URL(s)?", response, NULL, NULL, NULL, NULL, NULL);
+        action_install_url("入力したURLから\nインストールしますか？", response, NULL, NULL, NULL, NULL, NULL);
     }
 }
 
 static void remoteinstall_manually_enter_urls() {
-    kbd_display("Enter URL(s)", "", SWKBD_TYPE_NORMAL, SWKBD_MULTILINE, SWKBD_NOTEMPTY_NOTBLANK, DOWNLOAD_URL_MAX * INSTALL_URLS_MAX, NULL, remoteinstall_manually_enter_urls_onresponse);
+    kbd_display("URLを入力", "", SWKBD_TYPE_NORMAL, SWKBD_MULTILINE, SWKBD_NOTEMPTY_NOTBLANK, DOWNLOAD_URL_MAX * INSTALL_URLS_MAX, NULL, remoteinstall_manually_enter_urls_onresponse);
 }
 
 static void remoteinstall_repeat_last_request() {
     char* textBuf = (char*) calloc(1, DOWNLOAD_URL_MAX * INSTALL_URLS_MAX);
     if(textBuf != NULL) {
         if(remoteinstall_get_last_urls(textBuf, DOWNLOAD_URL_MAX * INSTALL_URLS_MAX)) {
-            action_install_url("Install from the last requested URL(s)?", textBuf, NULL, NULL, NULL, NULL, NULL);
+            action_install_url("前回のURLから\nインストールしますか？", textBuf, NULL, NULL, NULL, NULL, NULL);
         } else {
-            prompt_display_notify("Failure", "No previously requested URL(s) could be found.", COLOR_TEXT, NULL, NULL, NULL);
+            prompt_display_notify("失敗", "前回のURLが見つかりません。", COLOR_TEXT, NULL, NULL, NULL);
         }
 
         free(textBuf);
     } else {
-        error_display_res(NULL, NULL, R_APP_OUT_OF_MEMORY, "Failed to allocate URL text buffer.");
+        error_display_res(NULL, NULL, R_APP_OUT_OF_MEMORY, "メモリーの確保に失敗しました。");
     }
 }
 
 static void remoteinstall_forget_last_request() {
     Result forgetRes = remoteinstall_set_last_urls(NULL);
     if(R_SUCCEEDED(forgetRes)) {
-        prompt_display_notify("Success", "Last requested URL(s) forgotten.", COLOR_TEXT, NULL, NULL, NULL);
+        prompt_display_notify("完了", "前回のURLを削除しました。", COLOR_TEXT, NULL, NULL, NULL);
     } else {
-        error_display_res(NULL, NULL, forgetRes, "Failed to forget last requested URL(s).");
+        error_display_res(NULL, NULL, forgetRes, "前回のURLの削除に失敗しました。");
     }
 }
 
-static list_item receive_urls_network = {"Receive URLs over the network", COLOR_TEXT, remoteinstall_receive_urls_network};
-static list_item scan_qr_code = {"Scan QR Code", COLOR_TEXT, remoteinstall_scan_qr_code};
-static list_item manually_enter_urls = {"Manually enter URLs", COLOR_TEXT, remoteinstall_manually_enter_urls};
-static list_item repeat_last_request = {"Repeat last request", COLOR_TEXT, remoteinstall_repeat_last_request};
-static list_item forget_last_request = {"Forget last request", COLOR_TEXT, remoteinstall_forget_last_request};
+static list_item receive_urls_network = {"ネットワーク経由でURLを受信", COLOR_TEXT, remoteinstall_receive_urls_network};
+static list_item scan_qr_code = {"QRコードを読み取る", COLOR_TEXT, remoteinstall_scan_qr_code};
+static list_item manually_enter_urls = {"URLを直接入力", COLOR_TEXT, remoteinstall_manually_enter_urls};
+static list_item repeat_last_request = {"前回のURLを再実行", COLOR_TEXT, remoteinstall_repeat_last_request};
+static list_item forget_last_request = {"前回のURLを削除", COLOR_TEXT, remoteinstall_forget_last_request};
 
 static void remoteinstall_update(ui_view* view, void* data, linked_list* items, list_item* selected, bool selectedTouched) {
     if(hidKeysDown() & KEY_B) {
@@ -496,5 +496,5 @@ static void remoteinstall_update(ui_view* view, void* data, linked_list* items, 
 }
 
 void remoteinstall_open() {
-    list_display("Remote Install", "A: Select, B: Return", NULL, remoteinstall_update, NULL);
+    list_display("ネットワークインストール", "A: 選択  B: 戻る", NULL, remoteinstall_update, NULL);
 }

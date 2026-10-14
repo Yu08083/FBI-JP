@@ -150,7 +150,7 @@ static void ui_draw_top(ui_view* ui) {
     screen_set_base_alpha(ui_fade_alpha);
 
     char verText[64];
-    snprintf(verText, 64, "Ver. %d.%d.%d", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO);
+    snprintf(verText, 64, "FBI %s", FBI_JA_VERSION);
 
     float verWidth;
     float verHeight;
@@ -158,8 +158,8 @@ static void ui_draw_top(ui_view* ui) {
     screen_draw_string(verText, topScreenTopBarX + 2, topScreenTopBarY + (topScreenTopBarHeight - verHeight) / 2, 0.5f, 0.5f, COLOR_TEXT, true);
 
     time_t t = time(NULL);
-    char* timeText = ctime(&t);
-    timeText[strlen(timeText) - 1] = '\0';
+    char timeText[32];
+    strftime(timeText, sizeof(timeText), "%Y/%m/%d %H:%M:%S", localtime(&t));
 
     float timeTextWidth;
     float timeTextHeight;
@@ -248,7 +248,7 @@ static void ui_draw_top(ui_view* ui) {
             }
 
             u64 size = (u64) resource.freeClusters * (u64) resource.clusterSize;
-            snprintf(currBuffer, sizeof(ui_free_space_buffer) - (currBuffer - ui_free_space_buffer), "TWL Photo: %.1f %s",
+            snprintf(currBuffer, sizeof(ui_free_space_buffer) - (currBuffer - ui_free_space_buffer), "DSi写真: %.1f %s",
                      ui_get_display_size(size), ui_get_display_size_units(size));
             currBuffer += strlen(currBuffer);
         }

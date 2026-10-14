@@ -103,7 +103,7 @@ static Result action_install_url_open_dst(void* data, u32 index, void* initialRe
 
             bool n3ds = false;
             if(R_SUCCEEDED(APT_CheckNew3DS(&n3ds)) && !n3ds && ((titleId >> 28) & 0xF) == 2) {
-                ui_view* view = prompt_display_yes_no("Confirmation", "Title is intended for New 3DS systems.\nContinue?", COLOR_TEXT, data, action_install_url_draw_top, action_install_url_n3ds_onresponse);
+                ui_view* view = prompt_display_yes_no("確認", "このタイトルはNew 3DS用です。\n続行しますか？", COLOR_TEXT, data, action_install_url_draw_top, action_install_url_n3ds_onresponse);
                 if(view != NULL) {
                     svcWaitSynchronization(view->active, U64_MAX);
                 }
@@ -113,7 +113,7 @@ static Result action_install_url_open_dst(void* data, u32 index, void* initialRe
                 }
             }
 
-            // Deleting FBI before it reinstalls itself causes issues.
+
             u64 currTitleId = 0;
             FS_MediaType currMediaType = MEDIATYPE_NAND;
 
@@ -138,9 +138,9 @@ static Result action_install_url_open_dst(void* data, u32 index, void* initialRe
             installData->ticketInfo.loaded = true;
 
             AM_DeleteTicket(installData->ticketInfo.titleId);
-            res = AM_InstallTicketBegin(handle);
+            res = AMNET_InstallTicketBegin(handle);
         }
-    } else if(*(u32*) initialReadBlock == 0x58534433 /* 3DSX */ || *(u32*) initialReadBlock == 0x48444D53 /* SMDH */) {
+    } else if(*(u32*) initialReadBlock == 0x58534433   || *(u32*) initialReadBlock == 0x48444D53  ) {
         installData->contentType = CONTENT_3DSX_SMDH;
 
         FS_Archive sdmcArchive = 0;
@@ -195,7 +195,7 @@ static Result action_install_url_close_dst(void* data, u32 index, bool succeeded
                 }
             }
         } else if(installData->contentType == CONTENT_TICKET) {
-            res = AM_InstallTicketFinish(handle);
+            res = AMNET_InstallTicketFinish(handle);
         } else if(installData->contentType == CONTENT_3DSX_SMDH) {
             res = FSFILE_Close(handle);
         }
@@ -203,7 +203,7 @@ static Result action_install_url_close_dst(void* data, u32 index, bool succeeded
         if(installData->contentType == CONTENT_CIA) {
             res = AM_CancelCIAInstall(handle);
         } else if(installData->contentType == CONTENT_TICKET) {
-            res = AM_InstallTicketAbort(handle);
+            res = AMNET_InstallTicketAbort(handle);
         } else if(installData->contentType == CONTENT_3DSX_SMDH) {
             res = FSFILE_Close(handle);
 
@@ -245,9 +245,9 @@ static bool action_install_url_error(void* data, u32 index, Result res, ui_view*
 
     char* url = installData->urls[index];
     if(strlen(url) > 38) {
-        *errorView = error_display_res(data, action_install_url_draw_top, res, "Failed to install from URL.\n%.35s...", url);
+        *errorView = error_display_res(data, action_install_url_draw_top, res, "URLからのインストールに失敗。\n%.35s...", url);
     } else {
-        *errorView = error_display_res(data, action_install_url_draw_top, res, "Failed to install from URL.\n%.38s", url);
+        *errorView = error_display_res(data, action_install_url_draw_top, res, "URLからのインストールに失敗。\n%.38s", url);
     }
 
     return true;
@@ -261,7 +261,7 @@ static void action_install_url_install_update(ui_view* view, void* data, float* 
         info_destroy(view);
 
         if(R_SUCCEEDED(installData->installInfo.result)) {
-            prompt_display_notify("Success", "Install finished.", COLOR_TEXT, NULL, NULL, NULL);
+            prompt_display_notify("完了", "インストールが完了しました。", COLOR_TEXT, NULL, NULL, NULL);
         }
 
         action_install_url_free_data(installData);
@@ -274,7 +274,7 @@ static void action_install_url_install_update(ui_view* view, void* data, float* 
     }
 
     *progress = installData->installInfo.currTotal != 0 ? (float) ((double) installData->installInfo.currProcessed / (double) installData->installInfo.currTotal) : 0;
-    snprintf(text, PROGRESS_TEXT_MAX, "%lu / %lu\n%.2f %s / %.2f %s\n%.2f %s/s, ETA %s", installData->installInfo.processed, installData->installInfo.total,
+    snprintf(text, PROGRESS_TEXT_MAX, "%lu / %lu\n%.2f %s / %.2f %s\n%.2f %s/s, 残り %s", installData->installInfo.processed, installData->installInfo.total,
              ui_get_display_size(installData->installInfo.currProcessed),
              ui_get_display_size_units(installData->installInfo.currProcessed),
              ui_get_display_size(installData->installInfo.currTotal),
@@ -290,9 +290,9 @@ static void action_install_url_confirm_onresponse(ui_view* view, void* data, u32
     if(response == PROMPT_YES) {
         Result res = task_data_op(&installData->installInfo);
         if(R_SUCCEEDED(res)) {
-            info_display("Installing From URL(s)", "Press B to cancel.", true, data, action_install_url_install_update, action_install_url_draw_top);
+            info_display("URLからインストール中", "B: 中止", true, data, action_install_url_install_update, action_install_url_draw_top);
         } else {
-            error_display_res(NULL, NULL, res, "Failed to initiate installation.");
+            error_display_res(NULL, NULL, res, "インストールを開始できません。");
 
             action_install_url_free_data(installData);
         }
@@ -307,7 +307,7 @@ void action_install_url(const char* confirmMessage, const char* urls, const char
                         void (*drawTop)(ui_view* view, void* data, float x1, float y1, float x2, float y2, u32 index)) {
     install_url_data* data = (install_url_data*) calloc(1, sizeof(install_url_data));
     if(data == NULL) {
-        error_display(NULL, NULL, "Failed to allocate URL install data.");
+        error_display(NULL, NULL, "メモリーの確保に失敗しました。");
 
         return;
     }
@@ -399,5 +399,5 @@ void action_install_url(const char* confirmMessage, const char* urls, const char
 
     data->installInfo.finished = true;
 
-    prompt_display_yes_no("Confirmation", confirmMessage, COLOR_TEXT, data, action_install_url_draw_top, action_install_url_confirm_onresponse);
+    prompt_display_yes_no("確認", confirmMessage, COLOR_TEXT, data, action_install_url_draw_top, action_install_url_confirm_onresponse);
 }

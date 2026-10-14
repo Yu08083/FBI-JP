@@ -1,27 +1,27 @@
-/* quirc - QR-code recognition library
- * Copyright (C) 2010-2012 Daniel Beer <dlbeer@gmail.com>
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
 #include "quirc_internal.h"
 
-/************************************************************************
- * Linear algebra routines
- */
+
+
+
 
 static int line_intersect(const struct quirc_point *p0,
 			  const struct quirc_point *p1,
@@ -29,26 +29,26 @@ static int line_intersect(const struct quirc_point *p0,
 			  const struct quirc_point *q1,
 			  struct quirc_point *r)
 {
-	/* (a, b) is perpendicular to line p */
+
 	int a = -(p1->y - p0->y);
 	int b = p1->x - p0->x;
 
-	/* (c, d) is perpendicular to line q */
+
 	int c = -(q1->y - q0->y);
 	int d = q1->x - q0->x;
 
-	/* e and f are dot products of the respective vectors with p and q */
+
 	int e = a * p1->x + b * p1->y;
 	int f = c * q1->x + d * q1->y;
 
-	/* Now we need to solve:
-	 *     [a b] [rx]   [e]
-	 *     [c d] [ry] = [f]
-	 *
-	 * We do this by inverting the matrix and applying it to (e, f):
-	 *       [ d -b] [e]   [rx]
-	 * 1/det [-c  a] [f] = [ry]
-	 */
+
+
+
+
+
+
+
+
 	int det = (a * d) - (b * c);
 
 	if (!det)
@@ -117,13 +117,13 @@ static void perspective_unmap(const double *c,
 		den;
 }
 
-/************************************************************************
- * Span-based floodfill routine
- */
+
+
+
 
 typedef void (*span_func_t)(void *user_data, int y, int left, int right);
 
-#if 0 // recursive flood fill
+#if 0
 
 #define FLOOD_FILL_MAX_DEPTH	4096
 
@@ -153,14 +153,14 @@ static void flood_fill_rec(int x, int y, int depth)
 	while (right < ffp.q->w - 1 && row[right + 1] == ffp.from)
 		right++;
 
-	/* Fill the extent */
+
 	for (i = left; i <= right; i++)
 		row[i] = ffp.to;
 
 	if (ffp.func)
 		ffp.func(ffp.user_data, y, left, right);
 
-	/* Seed new flood-fills */
+
 	if (y > 0) {
 		row = ffp.q->pixels + (y - 1) * ffp.q->w;
 
@@ -190,7 +190,7 @@ static void flood_fill_seed(struct quirc *q, int x, int y, int from, int to,
 	flood_fill_rec(x, y, FLOOD_FILL_MAX_DEPTH);
 }
 
-#else // stacked flood fill
+#else
 
 #define FILL_STACK_CHUNK_SIZE 0x400
 
@@ -267,14 +267,14 @@ static void flood_fill_seed(struct quirc *q, int start_x, int start_y, int from,
 		while (right < q->w - 1 && row[right + 1] == from)
 			right++;
 
-		/* Fill the extent */
+
 		for (i = left; i <= right; i++)
 			row[i] = to;
 
 		if (func)
 			func(user_data, y, left, right);
 
-		/* Seed new flood-fills */
+
 		if (y > 0) {
 			row = q->pixels + (y - 1) * q->w;
 
@@ -294,9 +294,9 @@ static void flood_fill_seed(struct quirc *q, int start_x, int start_y, int from,
 }
 #endif
 
-/************************************************************************
- * Adaptive thresholding
- */
+
+
+
 
 #define THRESHOLD_S_DEN		8
 #define THRESHOLD_T		5
@@ -492,10 +492,10 @@ static void record_capstone(struct quirc *q, int ring, int stone)
 	stone_reg->capstone = cs_index;
 	ring_reg->capstone = cs_index;
 
-	/* Find the corners of the ring */
+
 	find_region_corners(q, ring, &stone_reg->seed, capstone->corners);
 
-	/* Set up the perspective transform and find the center */
+
 	perspective_setup(capstone->c, capstone->corners, 7.0, 7.0);
 	perspective_map(capstone->c, 3.5, 3.5, &capstone->center);
 }
@@ -514,22 +514,22 @@ static void test_capstone(struct quirc *q, int x, int y, int *pb)
 	if (ring_left < 0 || ring_right < 0 || stone < 0)
 		return;
 
-	/* Left and ring of ring should be connected */
+
 	if (ring_left != ring_right)
 		return;
 
-	/* Ring should be disconnected from stone */
+
 	if (ring_left == stone)
 		return;
 
 	stone_reg = &q->regions[stone];
 	ring_reg = &q->regions[ring_left];
 
-	/* Already detected */
+
 	if (stone_reg->capstone >= 0 || ring_reg->capstone >= 0)
 		return;
 
-	/* Ratio should ideally be 37.5 */
+
 	ratio = stone_reg->count * 100 / ring_reg->count;
 	if (ratio < 10 || ratio > 70)
 		return;
@@ -593,12 +593,12 @@ static void find_alignment_pattern(struct quirc *q, int index)
 	int dir = 0;
 	double u, v;
 
-	/* Grab our previous estimate of the alignment pattern corner */
+
 	memcpy(&b, &qr->align, sizeof(b));
 
-	/* Guess another two corners of the alignment pattern so that we
-	 * can estimate its size.
-	 */
+
+
+
 	perspective_unmap(c0->c, &b, &u, &v);
 	perspective_map(c0->c, u, v + 1.0, &a);
 	perspective_unmap(c2->c, &b, &u, &v);
@@ -607,10 +607,10 @@ static void find_alignment_pattern(struct quirc *q, int index)
 	size_estimate = abs((a.x - b.x) * -(c.y - b.y) +
 			    (a.y - b.y) * (c.x - b.x));
 
-	/* Spiral outwards from the estimate point until we find something
-	 * roughly the right size. Don't look too far from the estimate
-	 * point.
-	 */
+
+
+
+
 	while (step_size * step_size < size_estimate * 100) {
 		static const int dx_map[] = {1, 0, -1, 0};
 		static const int dy_map[] = {0, -1, 0, 1};
@@ -657,9 +657,9 @@ static void find_leftmost_to_line(void *user_data, int y, int left, int right)
 	}
 }
 
-/* Do a Bresenham scan from one point to another and count the number
- * of black/white transitions.
- */
+
+
+
 static int timing_scan(const struct quirc *q,
 		       const struct quirc_point *p0,
 		       const struct quirc_point *p1)
@@ -737,15 +737,15 @@ static int timing_scan(const struct quirc *q,
 	return count;
 }
 
-/* Try the measure the timing pattern for a given QR code. This does
- * not require the global perspective to have been set up, but it
- * does require that the capstone corners have been set to their
- * canonical rotation.
- *
- * For each capstone, we find a point in the middle of the ring band
- * which is nearest the centre of the code. Using these points, we do
- * a horizontal and a vertical timing scan.
- */
+
+
+
+
+
+
+
+
+
 static int measure_timing_pattern(struct quirc *q, int index)
 {
 	struct quirc_grid *qr = &q->grids[index];
@@ -769,11 +769,11 @@ static int measure_timing_pattern(struct quirc *q, int index)
 	if (qr->vscan > scan)
 		scan = qr->vscan;
 
-	/* If neither scan worked, we can't go any further. */
+
 	if (scan < 0)
 		return -1;
 
-	/* Choose the nearest allowable grid size */
+
 	size = scan * 2 + 13;
 	ver = (size - 15) / 4;
 	qr->grid_size = ver * 4 + 17;
@@ -781,10 +781,10 @@ static int measure_timing_pattern(struct quirc *q, int index)
 	return 0;
 }
 
-/* Read a cell from a grid using the currently set perspective
- * transform. Returns +/- 1 for black/white, 0 for cells which are
- * out of image bounds.
- */
+
+
+
+
 static int read_cell(const struct quirc *q, int index, int x, int y)
 {
 	const struct quirc_grid *qr = &q->grids[index];
@@ -856,10 +856,10 @@ static int fitness_capstone(const struct quirc *q, int index, int x, int y)
 		fitness_ring(q, index, x, y, 3);
 }
 
-/* Compute a fitness score for the currently configured perspective
- * transform, using the features we expect to find by scanning the
- * grid.
- */
+
+
+
+
 static int fitness_all(const struct quirc *q, int index)
 {
 	const struct quirc_grid *qr = &q->grids[index];
@@ -869,7 +869,7 @@ static int fitness_all(const struct quirc *q, int index)
 	int i, j;
 	int ap_count;
 
-	/* Check the timing pattern */
+
 	for (i = 0; i < qr->grid_size - 14; i++) {
 		int expect = (i & 1) ? 1 : -1;
 
@@ -877,7 +877,7 @@ static int fitness_all(const struct quirc *q, int index)
 		score += fitness_cell(q, index, 6, i + 7) * expect;
 	}
 
-	/* Check capstones */
+
 	score += fitness_capstone(q, index, 0, 0);
 	score += fitness_capstone(q, index, qr->grid_size - 7, 0);
 	score += fitness_capstone(q, index, 0, qr->grid_size - 7);
@@ -885,7 +885,7 @@ static int fitness_all(const struct quirc *q, int index)
 	if (version < 0 || version > QUIRC_MAX_VERSION)
 		return score;
 
-	/* Check alignment patterns */
+
 	ap_count = 0;
 	while (info->apat[ap_count])
 		ap_count++;
@@ -941,16 +941,16 @@ static void jiggle_perspective(struct quirc *q, int index)
 	}
 }
 
-/* Once the capstones are in place and an alignment point has been
- * chosen, we call this function to set up a grid-reading perspective
- * transform.
- */
+
+
+
+
 static void setup_qr_perspective(struct quirc *q, int index)
 {
 	struct quirc_grid *qr = &q->grids[index];
 	struct quirc_point rect[4];
 
-	/* Set up the perspective map for reading the grid */
+
 	memcpy(&rect[0], &q->capstones[qr->caps[1]].corners[0],
 	       sizeof(rect[0]));
 	memcpy(&rect[1], &q->capstones[qr->caps[2]].corners[0],
@@ -963,9 +963,9 @@ static void setup_qr_perspective(struct quirc *q, int index)
 	jiggle_perspective(q, index);
 }
 
-/* Rotate the capstone with so that corner 0 is the leftmost with respect
- * to the given reference line.
- */
+
+
+
 static void rotate_capstone(struct quirc_capstone *cap,
 			    const struct quirc_point *h0,
 			    const struct quirc_point *hd)
@@ -986,7 +986,7 @@ static void rotate_capstone(struct quirc_capstone *cap,
 		}
 	}
 
-	/* Rotate the capstone */
+
 	for (j = 0; j < 4; j++)
 		memcpy(&copy[j], &cap->corners[(j + best) % 4],
 		       sizeof(copy[j]));
@@ -1004,14 +1004,14 @@ static void record_qr_grid(struct quirc *q, int a, int b, int c)
 	if (q->num_grids >= QUIRC_MAX_GRIDS)
 		return;
 
-	/* Construct the hypotenuse line from A to C. B should be to
-	 * the left of this line.
-	 */
+
+
+
 	memcpy(&h0, &q->capstones[a].center, sizeof(h0));
 	hd.x = q->capstones[c].center.x - q->capstones[a].center.x;
 	hd.y = q->capstones[c].center.y - q->capstones[a].center.y;
 
-	/* Make sure A-B-C is clockwise */
+
 	if ((q->capstones[b].center.x - h0.x) * -hd.y +
 	    (q->capstones[b].center.y - h0.y) * hd.x > 0) {
 		int swap = a;
@@ -1022,7 +1022,7 @@ static void record_qr_grid(struct quirc *q, int a, int b, int c)
 		hd.y = -hd.y;
 	}
 
-	/* Record the grid and its components */
+
 	qr_index = q->num_grids;
 	qr = &q->grids[q->num_grids++];
 
@@ -1032,9 +1032,9 @@ static void record_qr_grid(struct quirc *q, int a, int b, int c)
 	qr->caps[2] = c;
 	qr->align_region = -1;
 
-	/* Rotate each capstone so that corner 0 is top-left with respect
-	 * to the grid.
-	 */
+
+
+
 	for (i = 0; i < 3; i++) {
 		struct quirc_capstone *cap = &q->capstones[qr->caps[i]];
 
@@ -1042,15 +1042,15 @@ static void record_qr_grid(struct quirc *q, int a, int b, int c)
 		cap->qr_grid = qr_index;
 	}
 
-	/* Check the timing pattern. This doesn't require a perspective
-	 * transform.
-	 */
+
+
+
 	if (measure_timing_pattern(q, qr_index) < 0)
 		goto fail;
 
-	/* Make an estimate based for the alignment pattern based on extending
-	 * lines from capstones A and C.
-	 */
+
+
+
 	if (!line_intersect(&q->capstones[a].corners[0],
 			    &q->capstones[a].corners[1],
 			    &q->capstones[c].corners[0],
@@ -1058,20 +1058,20 @@ static void record_qr_grid(struct quirc *q, int a, int b, int c)
 			    &qr->align))
 		goto fail;
 
-	/* On V2+ grids, we should use the alignment pattern. */
+
 	if (qr->grid_size > 21) {
-		/* Try to find the actual location of the alignment pattern. */
+
 		find_alignment_pattern(q, qr_index);
 
-		/* Find the point of the alignment pattern closest to the
-		 * top-left of the QR grid.
-		 */
+
+
+
 		if (qr->align_region >= 0) {
 			struct polygon_score_data psd;
 			struct quirc_region *reg =
 				&q->regions[qr->align_region];
 
-			/* Start from some point inside the alignment pattern */
+
 			memcpy(&qr->align, &reg->seed, sizeof(qr->align));
 
 			memcpy(&psd.ref, &hd, sizeof(psd.ref));
@@ -1092,9 +1092,9 @@ static void record_qr_grid(struct quirc *q, int a, int b, int c)
 	return;
 
 fail:
-	/* We've been unable to complete setup for this grid. Undo what we've
-	 * recorded and pretend it never happened.
-	 */
+
+
+
 	for (i = 0; i < 3; i++)
 		q->capstones[qr->caps[i]].qr_grid = -1;
 	q->num_grids--;
@@ -1118,7 +1118,7 @@ static void test_neighbours(struct quirc *q, int i,
 	double best_score = 0.0;
 	int best_h = -1, best_v = -1;
 
-	/* Test each possible grouping */
+
 	for (j = 0; j < hlist->count; j++)
 		for (k = 0; k < vlist->count; k++) {
 			const struct neighbour *hn = &hlist->n[j];
@@ -1154,9 +1154,9 @@ static void test_grouping(struct quirc *q, int i)
 	hlist.count = 0;
 	vlist.count = 0;
 
-	/* Look for potential neighbours by examining the relative gradients
-	 * from this capstone to others.
-	 */
+
+
+
 	for (j = 0; j < q->num_capstones; j++) {
 		struct quirc_capstone *c2 = &q->capstones[j];
 		double u, v;
