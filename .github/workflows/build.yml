@@ -34,14 +34,15 @@ jobs:
           echo '69768596f836acb3e3aeaa66e47c6ba560dde813c6dfcd33c8afc25fe29b7524  /tmp/bannertool.zip' | sha256sum -c -
           unzip -q /tmp/bannertool.zip -d /tmp/bannertool
           install -m 755 /tmp/bannertool/linux-x86_64/bannertool /usr/local/bin/bannertool
-          git clone --depth 1 --branch makerom-v0.19.0 https://github.com/3DSGuy/Project_CTR.git /tmp/project-ctr
-          test "$(git -C /tmp/project-ctr rev-parse HEAD)" = e8f5f529c54ff9b22a2491a480ffa69206bf7b19
+          git clone --depth 1 --branch makerom-v0.18.4 https://github.com/3DSGuy/Project_CTR.git /tmp/project-ctr
+          test "$(git -C /tmp/project-ctr rev-parse HEAD)" = c0488dcb6c3048e6a519716f2b21e2c65859ca75
           make -C /tmp/project-ctr/makerom deps
           make -C /tmp/project-ctr/makerom -j2
           install -m 755 /tmp/project-ctr/makerom/bin/makerom /usr/local/bin/makerom
       - name: Build CIA and 3DSX
         run: |
           make -j2 output/3ds-arm/FBI.cia output/3ds-arm/3ds/FBI/FBI.3dsx
+          python3 tests/verify_cia.py output/3ds-arm/FBI.cia
           mkdir -p dist
           cp output/3ds-arm/FBI.cia dist/FBI-JP.cia
           cp output/3ds-arm/3ds/FBI/FBI.3dsx dist/FBI-JP.3dsx
