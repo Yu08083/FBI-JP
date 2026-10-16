@@ -12,7 +12,7 @@ http = (root / "source/core/http.c").read_text(encoding="utf-8")
 start = http.index("typedef struct {\n    void* buf;\n    size_t size;")
 end = http.index("static Result FSUSER_AddSeed(")
 update = (root / "source/fbi/update.c").read_text(encoding="utf-8")
-limit = re.search(r'http_download_json\("[^"]+", &json, (\d+) \* 1024\)', update)
+limit = re.search(r'http_download_json\([^,]+, &json, (\d+) \* 1024\)', update)
 capacity = int(limit[1]) * 1024
 host_source = r"""
 #include <stdint.h>
