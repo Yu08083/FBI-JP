@@ -7,6 +7,10 @@
 
 [ダウンロード](https://github.com/Yu08083/FBI-JP/releases/latest)
 
+![インストール用QRコード](docs/install-qr.png)
+
+FBIの「ネットワークインストール」→「QRコードを読み取る」で読み込んでください。
+
 `FBI-JP.cia`をSDカードに置き、FBIからインストールしてください。既存のFBIを置き換えます。
 
 ## クレジット

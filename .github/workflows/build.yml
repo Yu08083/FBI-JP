@@ -22,10 +22,13 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - name: Check localization and layout
+      - name: Check localization, layout and updates
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          apt-get update
+          apt-get install -y --no-install-recommends libjansson-dev
           python3 tests/verify.py
+          python3 tests/verify_http.py
       - name: Prepare packaging tools
         run: |
           apt-get update

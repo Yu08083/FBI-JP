@@ -384,14 +384,13 @@ static Result http_download_buffer_callback(void* userData, void* buffer, size_t
     http_buffer_data* data = (http_buffer_data*) userData;
 
     size_t remaining = data->size - data->pos;
-    size_t copySize = size;
-    if(copySize > remaining) {
-        copySize = remaining;
+    if(size > remaining) {
+        return R_APP_OUT_OF_RANGE;
     }
 
-    if(copySize > 0) {
-        memcpy((u8*) data->buf + data->pos, buffer, copySize);
-        data->pos += copySize;
+    if(size > 0) {
+        memcpy((u8*) data->buf + data->pos, buffer, size);
+        data->pos += size;
     }
 
     return 0;
@@ -399,6 +398,10 @@ static Result http_download_buffer_callback(void* userData, void* buffer, size_t
 
 
 Result http_download_buffer(const char* url, u32* downloadedSize, void* buf, size_t size) {
+    if(url == NULL || downloadedSize == NULL || buf == NULL || size == 0) {
+        return R_APP_INVALID_ARGUMENT;
+    }
+
     http_buffer_data data = {buf, size, 0};
     Result res = http_download_callback(url, size, &data, http_download_buffer_callback, NULL, NULL);
 
@@ -410,7 +413,7 @@ Result http_download_buffer(const char* url, u32* downloadedSize, void* buf, siz
 }
 
 Result http_download_json(const char* url, json_t** json, size_t maxSize) {
-    if(url == NULL || json == NULL) {
+    if(url == NULL || json == NULL || maxSize == 0) {
         return R_APP_INVALID_ARGUMENT;
     }
 
@@ -421,7 +424,7 @@ Result http_download_json(const char* url, json_t** json, size_t maxSize) {
         u32 textSize = 0;
         if(R_SUCCEEDED(res = http_download_buffer(url, &textSize, text, maxSize))) {
             json_error_t error;
-            json_t* parsed = json_loads(text, 0, &error);
+            json_t* parsed = json_loadb(text, textSize, 0, &error);
             if(parsed != NULL) {
                 *json = parsed;
             } else {

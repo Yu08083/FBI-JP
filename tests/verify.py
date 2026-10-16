@@ -30,6 +30,7 @@ def structure(text):
     return result
 
 changed_logic = {
+    "source/core/http.c",
     "source/core/screen.c", "source/core/stringutil.c", "source/core/stringutil.h",
     "source/core/ui/prompt.c", "source/core/ui/ui.c", "source/fbi/update.c",
     "source/fbi/task/uitask.c",
