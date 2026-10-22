@@ -99,6 +99,8 @@ with tempfile.TemporaryDirectory(prefix="fbi-update-check-") as temporary:
     upstream_newer_tag = f"{major}.{minor}.{micro + 1}"
     upstream_newer = release(upstream_newer_tag, False)
     cases = [
+        (release(version + "+20261023", True), upstream_current, 0, 0, False, 1, 1, ""),
+        (release(newer_tag + "+20261023", True), upstream_newer, 0, 0, False, 2, 0, f"{newer_tag}+20261023/FBI-JP.cia"),
         (newer, upstream_newer, 0, 0, False, 2, 0, f"{newer_tag}/FBI-JP.cia"),
         (newer, upstream_newer, 0, 0, True, 2, 0, f"{newer_tag}/FBI-JP.3dsx"),
         (current, upstream_newer, 0, 0, False, 2, 1, f"{upstream_newer_tag}/FBI.cia"),

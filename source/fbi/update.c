@@ -18,11 +18,11 @@ static bool update_is_newer(const char* tag, bool japanese) {
     const char* version = tag[0] == 'v' ? tag + 1 : tag;
     if(japanese) {
         if(sscanf(version, "%u.%u.%u-ja.%u%n", &candidate[0], &candidate[1], &candidate[2], &candidate[3], &end) != 4
-           || version[end] != '\0'
+           || (version[end] != '\0' && version[end] != '+')
            || sscanf(FBI_JA_VERSION, "%u.%u.%u-ja.%u", &current[0], &current[1], &current[2], &current[3]) != 4) {
             return false;
         }
-    } else if(sscanf(version, "%u.%u.%u%n", &candidate[0], &candidate[1], &candidate[2], &end) != 3 || version[end] != '\0') {
+    } else if(sscanf(version, "%u.%u.%u%n", &candidate[0], &candidate[1], &candidate[2], &end) != 3 || (version[end] != '\0' && version[end] != '+')) {
         return false;
     }
 

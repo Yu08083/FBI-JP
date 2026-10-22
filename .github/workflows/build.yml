@@ -82,4 +82,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --title "FBI 日本語版 $GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md
+          gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --latest --title "FBI 日本語版 ${GITHUB_REF_NAME%%+*}" --notes-file RELEASE_NOTES.md
