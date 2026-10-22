@@ -9,12 +9,14 @@
 #include "action/action.h"
 #include "task/uitask.h"
 #include "../core/core.h"
+#include "../core/text.h"
 
 static list_item rename_opt = {"名前を変更", COLOR_TEXT, action_rename};
 static list_item copy = {"コピー", COLOR_TEXT, NULL};
 static list_item paste = {"貼り付け", COLOR_TEXT, action_paste_contents};
 
 static list_item delete_file = {"削除", COLOR_TEXT, action_delete_file};
+static list_item edit_text = {"テキストを編集", COLOR_TEXT, action_edit_text};
 
 static list_item install_cia = {"CIAをインストール", COLOR_TEXT, action_install_cia};
 static list_item install_and_delete_cia = {"CIAをインストール後に削除", COLOR_TEXT, action_install_cia_delete};
@@ -149,6 +151,10 @@ static void files_action_update(ui_view* view, void* data, linked_list* items, l
 
             linked_list_add(items, &delete_dir);
         } else {
+            if(text_is_txt(info->name)) {
+                linked_list_add(items, &edit_text);
+            }
+
             if(info->isCia) {
                 linked_list_add(items, &install_cia);
                 linked_list_add(items, &install_and_delete_cia);

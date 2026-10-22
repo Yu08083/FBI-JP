@@ -1,6 +1,7 @@
 TARGET := 3DS
 
 NAME := FBI
+DISPLAY_NAME := FBI 日本語版
 
 BUILD_DIR := build
 OUTPUT_DIR := output
@@ -40,3 +41,8 @@ include buildtools/make_base
 
 CC_FLAGS := $(filter-out -DARM11 -D_3DS,$(CC_FLAGS)) -D__3DS__
 .SECONDARY: $(TARGET_BUILD_DIR)/meta.smdh
+
+$(TARGET_BUILD_DIR)/icon.icn $(TARGET_BUILD_DIR)/meta.smdh: $(ICON) tools/set_smdh.py Makefile
+	@mkdir -p $(dir $@)
+	@bannertool makesmdh -s "FBI" -l "FBI / Original: Steveice10" -p "$(AUTHOR)" -i $(ICON) $(ICON_FLAGS) -o $@ > /dev/null
+	@python3 tools/set_smdh.py "$@" "$(DISPLAY_NAME)" "$(DISPLAY_NAME) / Original: Steveice10" "$(AUTHOR)"

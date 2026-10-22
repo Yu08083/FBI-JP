@@ -30,6 +30,7 @@ void action_delete_dir_tickets(linked_list* items, list_item* selected);
 void action_new_folder(linked_list* items, list_item* selected);
 void action_paste_contents(linked_list* items, list_item* selected);
 void action_rename(linked_list* items, list_item* selected);
+void action_edit_text(linked_list* items, list_item* selected);
 
 void action_delete_pending_title(linked_list* items, list_item* selected);
 void action_delete_all_pending_titles(linked_list* items, list_item* selected);

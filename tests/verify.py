@@ -34,6 +34,8 @@ changed_logic = {
     "source/core/screen.c", "source/core/stringutil.c", "source/core/stringutil.h",
     "source/core/ui/prompt.c", "source/core/ui/ui.c", "source/fbi/update.c",
     "source/fbi/task/uitask.c",
+    "source/core/text.c", "source/core/text.h", "source/fbi/files.c",
+    "source/fbi/action/action.h", "source/fbi/action/edittext.c", "source/fbi/action/installurl.c",
 }
 for path in (root / "source").rglob("*"):
     if path.suffix not in (".c", ".h"):

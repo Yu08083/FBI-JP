@@ -30,6 +30,8 @@ jobs:
           python3 tests/verify.py
           python3 tests/verify_http.py
           python3 tests/verify_update.py
+          python3 tests/verify_text.py
+          python3 tests/verify_text_io.py
       - name: Prepare packaging tools
         run: |
           apt-get update
@@ -47,6 +49,7 @@ jobs:
         run: |
           make -j2 output/3ds-arm/FBI.cia output/3ds-arm/3ds/FBI/FBI.3dsx
           python3 tests/verify_cia.py output/3ds-arm/FBI.cia
+          python3 tests/verify_smdh.py output/3ds-arm/FBI.cia output/3ds-arm/3ds/FBI/FBI.3dsx build/3ds-arm/meta.smdh
           mkdir -p dist
           cp output/3ds-arm/FBI.cia dist/FBI-JP.cia
           cp output/3ds-arm/3ds/FBI/FBI.3dsx dist/FBI-JP.3dsx

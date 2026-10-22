@@ -150,7 +150,7 @@ static void ui_draw_top(ui_view* ui) {
     screen_set_base_alpha(ui_fade_alpha);
 
     char verText[64];
-    snprintf(verText, 64, "FBI %s", FBI_JA_VERSION);
+    snprintf(verText, 64, "FBI 日本語版 %s", FBI_JA_VERSION);
 
     float verWidth;
     float verHeight;
