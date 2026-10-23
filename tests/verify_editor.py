@@ -74,12 +74,14 @@ const char* saved_bytes(void) { return files[0].data; }
 u32 saved_size(void) { return files[0].size; }
 size_t editor_draw(int screen) {
     draw_count = 0;
+    measure_calls = 0;
     draw_screen = screen;
     ui_view* view = stack[0];
     if(screen == 0) view->drawTop(view, view->data, 0, 20, 400, 220);
     else view->drawBottom(view, view->data, 0, 20, 320, 220);
     return draw_count;
 }
+u32 editor_measures(void) { return measure_calls; }
 const char* draw_text(size_t index) { return draws[index].text; }
 float draw_number(size_t index, int field) {
     Draw* draw = &draws[index];
@@ -223,6 +225,7 @@ with tempfile.TemporaryDirectory(prefix="fbi-editor-check-") as temporary:
     library.editor_open(payload, len(payload))
     tick()
     first = snapshot(0)
+    assert library.editor_measures() < 80
     tick("R")
     second = snapshot(0)
     assert first != second

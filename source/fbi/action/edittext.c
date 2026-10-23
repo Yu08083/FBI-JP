@@ -362,17 +362,16 @@ static void action_edit_text_menu(ui_view* view, void* user, linked_list* items,
     }
 }
 
-static size_t action_edit_text_fit(char* output, size_t capacity, const char* input, size_t size, float width, float height, float scale, bool wrap) {
+static size_t action_edit_text_prefix(char* output, size_t capacity, const char* input, size_t size) {
     size_t position = 0;
     size_t written = 0;
-    output[0] = '\0';
     while(position < size) {
         size_t next = position + 1;
-        while(next < size && ((unsigned char) input[next] & 0xC0) == 0x80) {
+        while(((unsigned char) input[next] & 0xC0) == 0x80) {
             next++;
         }
         size_t count = input[position] == '\t' ? 4 : next - position;
-        if(written + count >= capacity) {
+        if(next > size || written + count >= capacity) {
             break;
         }
         if(input[position] == '\t') {
@@ -380,7 +379,20 @@ static size_t action_edit_text_fit(char* output, size_t capacity, const char* in
         } else {
             memcpy(output + written, input + position, count);
         }
-        output[written + count] = '\0';
+        written += count;
+        position = next;
+    }
+    output[written] = '\0';
+    return position;
+}
+
+static size_t action_edit_text_fit(char* output, size_t capacity, const char* input, size_t size, float width, float height, float scale, bool wrap) {
+    size_t low = 0;
+    size_t high = size < capacity - 1 ? size : capacity - 1;
+    size_t best = 0;
+    while(low <= high) {
+        size_t middle = low + (high - low) / 2;
+        size_t used = action_edit_text_prefix(output, capacity, input, middle);
         float measuredWidth = 0;
         float measuredHeight = 0;
         if(wrap) {
@@ -388,14 +400,16 @@ static size_t action_edit_text_fit(char* output, size_t capacity, const char* in
         } else {
             screen_get_string_size(&measuredWidth, &measuredHeight, output, scale, scale);
         }
-        if(measuredHeight > height || (!wrap && measuredWidth > width)) {
-            output[written] = '\0';
+        if(measuredHeight <= height && (wrap || measuredWidth <= width)) {
+            best = used;
+            low = middle + 1;
+        } else if(middle > 0) {
+            high = middle - 1;
+        } else {
             break;
         }
-        written += count;
-        position = next;
     }
-    return position;
+    return action_edit_text_prefix(output, capacity, input, best);
 }
 
 static void action_edit_text_draw_top(ui_view* view, void* user, float x1, float y1, float x2, float y2) {

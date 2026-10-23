@@ -117,7 +117,9 @@ typedef struct { char text[2048]; float x, y, scale, wrap; int screen; } Draw;
 static Draw draws[100];
 static size_t draw_count;
 static int draw_screen;
+static u32 measure_calls;
 static void measure(const char* text, float scale, float wrap, float* width, float* height) {
+    measure_calls++;
     float x = 0, maximum = 0;
     int lines = 1;
     for(size_t i = 0; text[i] != '\0';) {
