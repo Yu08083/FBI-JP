@@ -23,7 +23,6 @@ typedef struct {
     void* userData;
     void (*finishedURL)(void* data, u32 index);
     void (*finishedAll)(void* data);
-    void (*drawTop)(ui_view* view, void* data, float x1, float y1, float x2, float y2, u32 index);
 
     content_type contentType;
     u64 currTitleId;
@@ -44,14 +43,6 @@ static void action_install_url_free_data(install_url_data* data) {
 
 static void action_install_url_n3ds_onresponse(ui_view* view, void* data, u32 response) {
     ((install_url_data*) data)->n3dsContinue = response == PROMPT_YES;
-}
-
-static void action_install_url_draw_top(ui_view* view, void* data, float x1, float y1, float x2, float y2) {
-    install_url_data* installData = (install_url_data*) data;
-
-    if(installData->drawTop != NULL) {
-        installData->drawTop(view, installData->userData, x1, y1, x2, y2, installData->installInfo.processed);
-    }
 }
 
 static Result action_install_url_get_src_url(void* data, u32 index, char* url, size_t maxSize) {
@@ -81,7 +72,7 @@ static Result action_install_url_open_dst(void* data, u32 index, void* initialRe
 
             bool n3ds = false;
             if(R_SUCCEEDED(APT_CheckNew3DS(&n3ds)) && !n3ds && ((titleId >> 28) & 0xF) == 2) {
-                ui_view* view = prompt_display_yes_no("確認", "このタイトルはNew 3DS用です。\n続行しますか？", COLOR_TEXT, data, action_install_url_draw_top, action_install_url_n3ds_onresponse);
+                ui_view* view = prompt_display_yes_no("確認", "このタイトルはNew 3DS用です。\n続行しますか？", COLOR_TEXT, data, NULL, action_install_url_n3ds_onresponse);
                 if(view != NULL) {
                     svcWaitSynchronization(view->active, U64_MAX);
                 }
@@ -219,7 +210,7 @@ static Result action_install_url_restore(void* data, u32 index) {
 }
 
 static bool action_install_url_error(void* data, u32 index, Result res, ui_view** errorView) {
-    *errorView = error_display_res(data, action_install_url_draw_top, res, "ダウンロードしたファイルの\nインストールに失敗しました。");
+    *errorView = error_display_res(data, NULL, res, "ダウンロードしたファイルの\nインストールに失敗しました。");
 
     return true;
 }
@@ -261,7 +252,7 @@ static void action_install_url_confirm_onresponse(ui_view* view, void* data, u32
     if(response == PROMPT_YES) {
         Result res = task_data_op(&installData->installInfo);
         if(R_SUCCEEDED(res)) {
-            info_display("URLからインストール中", "B: 中止", true, data, action_install_url_install_update, action_install_url_draw_top);
+            info_display("インストール中", "B: 中止", true, data, action_install_url_install_update, NULL);
         } else {
             error_display_res(NULL, NULL, res, "インストールを開始できません。");
 
@@ -274,8 +265,7 @@ static void action_install_url_confirm_onresponse(ui_view* view, void* data, u32
 
 void action_install_url(const char* confirmMessage, const char* urls, const char* paths, void* userData,
                         void (*finishedURL)(void* data, u32 index),
-                        void (*finishedAll)(void* data),
-                        void (*drawTop)(ui_view* view, void* data, float x1, float y1, float x2, float y2, u32 index)) {
+                        void (*finishedAll)(void* data)) {
     install_url_data* data = (install_url_data*) calloc(1, sizeof(install_url_data));
     if(data == NULL) {
         error_display(NULL, NULL, "メモリーの確保に失敗しました。");
@@ -341,7 +331,6 @@ void action_install_url(const char* confirmMessage, const char* urls, const char
     data->userData = userData;
     data->finishedURL = finishedURL;
     data->finishedAll = finishedAll;
-    data->drawTop = drawTop;
 
     data->contentType = CONTENT_CIA;
     data->currTitleId = 0;
@@ -370,5 +359,5 @@ void action_install_url(const char* confirmMessage, const char* urls, const char
 
     data->installInfo.finished = true;
 
-    prompt_display_yes_no("確認", confirmMessage, COLOR_TEXT, data, action_install_url_draw_top, action_install_url_confirm_onresponse);
+    prompt_display_yes_no("確認", confirmMessage, COLOR_TEXT, data, NULL, action_install_url_confirm_onresponse);
 }

@@ -136,3 +136,107 @@ bool text_encode(const char* text, text_format format, void* output, size_t capa
     *size = position;
     return true;
 }
+
+size_t text_index_lines(const char* text, size_t* offsets, size_t capacity) {
+    if(text == NULL || offsets == NULL || capacity == 0) {
+        return 0;
+    }
+    size_t count = 1;
+    offsets[0] = 0;
+    for(size_t i = 0; text[i] != '\0'; i++) {
+        if(text[i] == '\n') {
+            if(count >= capacity) {
+                return 0;
+            }
+            offsets[count++] = i + 1;
+        }
+    }
+    return count;
+}
+
+bool text_line_span(const char* text, size_t line, size_t* start, size_t* length) {
+    if(text == NULL || start == NULL || length == NULL) {
+        return false;
+    }
+    const char* current = text;
+    for(size_t i = 0; i < line; i++) {
+        const char* end = strchr(current, '\n');
+        if(end == NULL) {
+            return false;
+        }
+        current = end + 1;
+    }
+    const char* end = strchr(current, '\n');
+    *start = current - text;
+    *length = end != NULL ? (size_t) (end - current) : strlen(current);
+    return true;
+}
+
+static bool text_replace_span(char* text, size_t capacity, size_t start, size_t length, const char* replacement) {
+    if(text == NULL || replacement == NULL) {
+        return false;
+    }
+    size_t currentSize = strlen(text);
+    size_t replacementSize = strlen(replacement);
+    if(start > currentSize || length > currentSize - start || currentSize - length >= capacity
+       || replacementSize >= capacity - (currentSize - length)
+       || !text_valid_utf8((const unsigned char*) replacement, replacementSize)) {
+        return false;
+    }
+    memmove(text + start + replacementSize, text + start + length, currentSize - start - length + 1);
+    memcpy(text + start, replacement, replacementSize);
+    return true;
+}
+
+bool text_replace_line(char* text, size_t capacity, size_t line, const char* replacement) {
+    size_t start = 0;
+    size_t length = 0;
+    return text_line_span(text, line, &start, &length) && text_replace_span(text, capacity, start, length, replacement);
+}
+
+bool text_insert_line(char* text, size_t capacity, size_t line, bool after) {
+    size_t start = 0;
+    size_t length = 0;
+    return text_line_span(text, line, &start, &length)
+           && text_replace_span(text, capacity, start + (after ? length : 0), 0, "\n");
+}
+
+bool text_delete_line(char* text, size_t capacity, size_t line) {
+    size_t start = 0;
+    size_t length = 0;
+    if(!text_line_span(text, line, &start, &length)) {
+        return false;
+    }
+    if(text[start + length] == '\n') {
+        length++;
+    } else if(start > 0) {
+        start--;
+        length++;
+    }
+    return text_replace_span(text, capacity, start, length, "");
+}
+
+bool text_find_line(const char* text, const char* query, size_t startLine, size_t* foundLine) {
+    if(text == NULL || query == NULL || query[0] == '\0' || foundLine == NULL) {
+        return false;
+    }
+    size_t start = 0;
+    size_t length = 0;
+    if(!text_line_span(text, startLine, &start, &length)) {
+        start = 0;
+    }
+    const char* match = strstr(text + start, query);
+    if(match == NULL && start > 0) {
+        match = strstr(text, query);
+    }
+    if(match == NULL) {
+        return false;
+    }
+    *foundLine = 0;
+    for(const char* p = text; p < match; p++) {
+        if(*p == '\n') {
+            (*foundLine)++;
+        }
+    }
+    return true;
+}

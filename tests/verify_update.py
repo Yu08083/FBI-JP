@@ -4,13 +4,20 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 version = re.search(r"JA_VERSION := (\S+)", (root / "Makefile").read_text(encoding="utf-8"))[1]
+release_version = version
+installed_ref = sys.argv[1] if len(sys.argv) > 1 else None
+if installed_ref:
+    version = re.search(r"JA_VERSION := (\S+)", subprocess.check_output(["git", "show", f"{installed_ref}:Makefile"], cwd=root).decode("utf-8"))[1]
 major, minor, micro, revision = map(int, re.fullmatch(r"(\d+)\.(\d+)\.(\d+)-ja\.(\d+)", version).groups())
 update = (root / "source/fbi/update.c").read_text(encoding="utf-8")
+if installed_ref:
+    update = subprocess.check_output(["git", "show", f"{installed_ref}:source/fbi/update.c"], cwd=root).decode("utf-8")
 host_source = r"""
 #include <stdbool.h>
 #include <stdint.h>
@@ -46,7 +53,7 @@ const char* fs_get_3dsx_path(void) { return launch_3dsx ? "/3ds/FBI/FBI.3dsx" : 
 void string_copy(char* dest, const char* source, size_t size) { snprintf(dest, size, "%s", source); }
 void ui_pop(void) {}
 void info_destroy(ui_view* view) {}
-void action_install_url(const char* text, const char* url, const char* path, void* a, void* b, void* c, void* d) {
+void action_install_url(const char* text, const char* url, const char* path, void* a, void* b, void* c, ...) {
     outcome = 2;
     string_copy(installed_url, url, sizeof(installed_url));
     string_copy(installed_prompt, text, sizeof(installed_prompt));
@@ -114,6 +121,12 @@ with tempfile.TemporaryDirectory(prefix="fbi-update-check-") as temporary:
         (current, upstream_newer, 0, -2, False, 3, 1, ""),
         (release(newer_tag, True, False), upstream_newer, 0, 0, False, 3, 0, ""),
     ]
+    if installed_ref:
+        latest = release(release_version, True)
+        cases = [
+            (latest, upstream_newer, 0, 0, False, 2, 0, f"{release_version}/FBI-JP.cia"),
+            (latest, upstream_newer, 0, 0, True, 2, 0, f"{release_version}/FBI-JP.3dsx"),
+        ]
     for japanese, upstream, jp_result, original_result, use3dsx, expected, upstream_calls, suffix in cases:
         assert library.run_update(japanese, upstream, jp_result, original_result, use3dsx) == expected
         assert library.request_count(0) == 1 and library.request_count(1) == upstream_calls
@@ -124,4 +137,4 @@ with tempfile.TemporaryDirectory(prefix="fbi-update-check-") as temporary:
         ctypes.windll.kernel32.FreeLibrary.argtypes = [ctypes.c_void_p]
         ctypes.windll.kernel32.FreeLibrary(library._handle)
 
-print(f"Validated {len(cases)} Japanese-first update cases for CIA and 3DSX.")
+print(f"Validated {len(cases)} update cases for CIA and 3DSX from {installed_ref or version}.")

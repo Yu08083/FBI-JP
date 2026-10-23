@@ -175,7 +175,7 @@ static void remoteinstall_network_update(ui_view* view, void* data, float* progr
         }
 
         remoteinstall_set_last_urls(urls);
-        action_install_url("受信したURLから\nインストールしますか？", urls, NULL, data, NULL, remoteinstall_network_close_client, NULL);
+        action_install_url("受信したURLから\nインストールしますか？", urls, NULL, data, NULL, remoteinstall_network_close_client);
 
         free(urls);
     } else if(errno != EAGAIN) {
@@ -376,7 +376,7 @@ static void remoteinstall_qr_update(ui_view* view, void* data, float* progress, 
 
             remoteinstall_set_last_urls((const char*) qrData.payload);
 
-            action_install_url("読み取ったQRコードから\nインストールしますか？", (const char*) qrData.payload, NULL, NULL, NULL, NULL, NULL);
+            action_install_url("読み取ったQRコードから\nインストールしますか？", (const char*) qrData.payload, NULL, NULL, NULL, NULL);
             return;
         }
     }
@@ -435,7 +435,7 @@ static void remoteinstall_manually_enter_urls_onresponse(ui_view* view, void* da
     if(button == SWKBD_BUTTON_CONFIRM) {
         remoteinstall_set_last_urls(response);
 
-        action_install_url("入力したURLから\nインストールしますか？", response, NULL, NULL, NULL, NULL, NULL);
+        action_install_url("入力したURLから\nインストールしますか？", response, NULL, NULL, NULL, NULL);
     }
 }
 
@@ -447,7 +447,7 @@ static void remoteinstall_repeat_last_request() {
     char* textBuf = (char*) calloc(1, DOWNLOAD_URL_MAX * INSTALL_URLS_MAX);
     if(textBuf != NULL) {
         if(remoteinstall_get_last_urls(textBuf, DOWNLOAD_URL_MAX * INSTALL_URLS_MAX)) {
-            action_install_url("前回のURLから\nインストールしますか？", textBuf, NULL, NULL, NULL, NULL, NULL);
+            action_install_url("前回のURLから\nインストールしますか？", textBuf, NULL, NULL, NULL, NULL);
         } else {
             prompt_display_notify("失敗", "前回のURLが見つかりません。", COLOR_TEXT, NULL, NULL, NULL);
         }

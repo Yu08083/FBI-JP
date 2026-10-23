@@ -53,5 +53,4 @@ void action_delete_secure_value(linked_list* items, list_item* selected);
 
 void action_install_url(const char* confirmMessage, const char* urls, const char* paths, void* userData,
                         void (*finishedURL)(void* data, u32 index),
-                        void (*finishedAll)(void* data),
-                        void (*drawTop)(ui_view* view, void* data, float x1, float y1, float x2, float y2, u32 index));
+                        void (*finishedAll)(void* data));

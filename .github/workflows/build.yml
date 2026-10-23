@@ -30,8 +30,12 @@ jobs:
           python3 tests/verify.py
           python3 tests/verify_http.py
           python3 tests/verify_update.py
+          python3 tests/verify_update.py 2.6.1-ja.3
+          python3 tests/verify_update.py '2.6.1-ja.3+20261023'
           python3 tests/verify_text.py
           python3 tests/verify_text_io.py
+          python3 tests/verify_editor.py
+          python3 tests/verify_download_ui.py
       - name: Prepare packaging tools
         run: |
           apt-get update

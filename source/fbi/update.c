@@ -101,7 +101,7 @@ static void update_check_update(ui_view* view, void* data, float* progress, char
     info_destroy(view);
 
     if(hasUpdate) {
-        action_install_url(upstream ? "原版（英語版）FBIに更新しますか？" : "FBI日本語版を最新版に更新しますか？", updateURL, fs_get_3dsx_path(), NULL, NULL, NULL, NULL);
+        action_install_url(upstream ? "原版（英語版）FBIに更新しますか？" : "FBI日本語版を最新版に更新しますか？", updateURL, fs_get_3dsx_path(), NULL, NULL, NULL);
     } else {
         if(R_FAILED(res)) {
             error_display_res(NULL, NULL, res, "更新の確認に失敗しました。");

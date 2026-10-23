@@ -36,6 +36,7 @@ changed_logic = {
     "source/fbi/task/uitask.c",
     "source/core/text.c", "source/core/text.h", "source/fbi/files.c",
     "source/fbi/action/action.h", "source/fbi/action/edittext.c", "source/fbi/action/installurl.c",
+    "source/fbi/remoteinstall.c",
 }
 for path in (root / "source").rglob("*"):
     if path.suffix not in (".c", ".h"):

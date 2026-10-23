@@ -164,7 +164,6 @@ static void ui_draw_top(ui_view* ui) {
     float timeTextWidth;
     float timeTextHeight;
     screen_get_string_size(&timeTextWidth, &timeTextHeight, timeText, 0.5f, 0.5f);
-    screen_draw_string(timeText, topScreenTopBarX + (topScreenTopBarWidth - timeTextWidth) / 2, topScreenTopBarY + (topScreenTopBarHeight - timeTextHeight) / 2, 0.5f, 0.5f, COLOR_TEXT, true);
 
     u32 batteryIcon = 0;
     u8 batteryChargeState = 0;
@@ -200,6 +199,16 @@ static void ui_draw_top(ui_view* ui) {
     float wifiX = topScreenTopBarX + topScreenTopBarWidth - 2 - batteryWidth - 4 - wifiWidth;
     float wifiY = topScreenTopBarY + (topScreenTopBarHeight - wifiHeight) / 2;
     screen_draw_texture(wifiIcon, wifiX, wifiY, wifiWidth, wifiHeight);
+
+    float timeScale = 0.5f;
+    float timeAvailable = wifiX - 6 - (topScreenTopBarX + 2 + verWidth + 6);
+    if(timeAvailable > 0) {
+        if(timeTextWidth > timeAvailable) {
+            timeScale *= timeAvailable / timeTextWidth;
+        }
+        screen_get_string_size(&timeTextWidth, &timeTextHeight, timeText, timeScale, timeScale);
+        screen_draw_string(timeText, wifiX - 6 - timeTextWidth, topScreenTopBarY + (topScreenTopBarHeight - timeTextHeight) / 2, timeScale, timeScale, COLOR_TEXT, true);
+    }
 
     if(osGetTime() >= ui_free_space_last_update + 1000) {
         char* currBuffer = ui_free_space_buffer;

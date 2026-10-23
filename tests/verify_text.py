@@ -1,5 +1,6 @@
 import ctypes
 import os
+import random
 import shutil
 import subprocess
 import tempfile
@@ -64,6 +65,69 @@ with tempfile.TemporaryDirectory(prefix="fbi-text-check-") as temporary:
     assert not library.text_decode(b"abc", 3, output, 3, ctypes.byref(Format()))
     assert library.text_decode(b"a\r\nb\nc\rd", 8, output, 8, ctypes.byref(Format()))
     assert output.value == b"a\nb\nc\nd"
+    library.text_index_lines.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t]
+    library.text_index_lines.restype = ctypes.c_size_t
+    library.text_line_span.argtypes = [ctypes.c_char_p, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_size_t)]
+    library.text_line_span.restype = ctypes.c_bool
+    library.text_replace_line.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_char_p]
+    library.text_replace_line.restype = ctypes.c_bool
+    library.text_insert_line.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_bool]
+    library.text_insert_line.restype = ctypes.c_bool
+    library.text_delete_line.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_size_t]
+    library.text_delete_line.restype = ctypes.c_bool
+    library.text_find_line.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t)]
+    library.text_find_line.restype = ctypes.c_bool
+    rng = random.Random(20261024)
+    document = "先頭\n設定=true\n日本語\n\n末尾\n"
+    for iteration in range(400):
+        lines = document.split("\n")
+        encoded = document.encode()
+        offsets = (ctypes.c_size_t * (len(lines) + 1))()
+        assert library.text_index_lines(encoded, offsets, len(lines)) == len(lines)
+        expected_offsets = [0]
+        for line in lines[:-1]:
+            expected_offsets.append(expected_offsets[-1] + len(line.encode()) + 1)
+        assert list(offsets[:len(lines)]) == expected_offsets
+        selected = rng.randrange(len(lines))
+        start, length = ctypes.c_size_t(), ctypes.c_size_t()
+        assert library.text_line_span(encoded, selected, ctypes.byref(start), ctypes.byref(length))
+        assert start.value == expected_offsets[selected] and length.value == len(lines[selected].encode())
+        buffer = ctypes.create_string_buffer(32770)
+        buffer.value = encoded
+        buffer[32769] = b"Q"
+        operation = rng.randrange(3)
+        if operation == 0:
+            replacement = rng.choice(("", "設定", "value=123", "one\ntwo", "😀"))
+            assert library.text_replace_line(buffer, 32769, selected, replacement.encode())
+            lines[selected] = replacement
+        elif operation == 1:
+            after = bool(rng.randrange(2))
+            assert library.text_insert_line(buffer, 32769, selected, after)
+            lines.insert(selected + int(after), "")
+        else:
+            assert library.text_delete_line(buffer, 32769, selected)
+            del lines[selected]
+        document = "\n".join(lines)
+        assert buffer.value.decode() == document
+        assert buffer.raw[32769:32770] == b"Q"
+        query = rng.choice(("設定", "value", "😀", "missing", ""))
+        start_line = rng.randrange(len(document.split("\n")) + 2)
+        search_offsets = [0] + [i + 1 for i, value in enumerate(document.encode()) if value == 10]
+        search_start = search_offsets[start_line] if start_line < len(search_offsets) else 0
+        match = document.encode().find(query.encode(), search_start) if query else -1
+        if match < 0 and query:
+            match = document.encode().find(query.encode())
+        found = ctypes.c_size_t()
+        assert library.text_find_line(document.encode(), query.encode(), start_line, ctypes.byref(found)) == (match >= 0)
+        if match >= 0:
+            assert found.value == document.encode()[:match].count(b"\n")
+        checks += 1
+    buffer = ctypes.create_string_buffer(b"x" * 32768, 32770)
+    assert not library.text_insert_line(buffer, 32769, 0, True)
+    assert buffer.value == b"x" * 32768
+    assert not library.text_replace_line(buffer, 32769, 0, b"\xED\xA0\x80")
+    assert buffer.value == b"x" * 32768
+    assert not library.text_delete_line(buffer, 32769, 1)
     if os.name == "nt":
         ctypes.windll.kernel32.FreeLibrary.argtypes = [ctypes.c_void_p]
         ctypes.windll.kernel32.FreeLibrary(library._handle)

@@ -21,3 +21,9 @@ typedef struct {
 bool text_is_txt(const char* path);
 bool text_decode(const void* bytes, size_t size, char* output, size_t capacity, text_format* format);
 bool text_encode(const char* text, text_format format, void* output, size_t capacity, size_t* size);
+size_t text_index_lines(const char* text, size_t* offsets, size_t capacity);
+bool text_line_span(const char* text, size_t line, size_t* start, size_t* length);
+bool text_replace_line(char* text, size_t capacity, size_t line, const char* replacement);
+bool text_insert_line(char* text, size_t capacity, size_t line, bool after);
+bool text_delete_line(char* text, size_t capacity, size_t line);
+bool text_find_line(const char* text, const char* query, size_t startLine, size_t* foundLine);
